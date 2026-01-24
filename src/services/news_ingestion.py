@@ -325,8 +325,10 @@ class NewsDataManager:
     """
     
     def __init__(self):
-        self.api_client = OpenSourceNewsClient()
+        # Initialize RSS aggregator for news feeds
         self.rss_aggregator = RSSFeedAggregator()
+        # HackerNewsClient for Hacker News stories
+        self.hn_client = HackerNewsClient()
     
     async def fetch_all_news(
         self,
@@ -345,31 +347,18 @@ class NewsDataManager:
         Returns:
             Combined list of articles from all sources
         """
-        # Fetch from multiple sources concurrently
-        api_task = self.api_client.fetch_latest_news(
-            category=category,
-            language=language,
-            limit=limit // 2
-        )
-        
+        # Fetch from RSS feeds (primary source)
         rss_task = self.rss_aggregator.fetch_from_feeds(
-            max_articles=limit // 2
+            max_articles=limit
         )
         
-        # Wait for all sources
-        api_results, rss_results = await asyncio.gather(
-            api_task,
-            rss_task,
-            return_exceptions=True
-        )
+        # Wait for results
+        rss_results = await rss_task
         
         # Combine results
         all_articles = []
         
-        if not isinstance(api_results, Exception):
-            all_articles.extend(api_results)
-        
-        if not isinstance(rss_results, Exception):
+        if isinstance(rss_results, list):
             all_articles.extend(rss_results)
         
         # Deduplicate by title/url

@@ -227,7 +227,7 @@ class AuditLog(Base):
     error_message = Column(Text, nullable=True)
     
     # Additional data
-    metadata = Column(Text, nullable=True)  # JSON
+    extra_data = Column(Text, nullable=True)  # JSON - renamed from metadata
     
     # Timestamp
     created_at = Column(DateTime(timezone=True), server_default=func.now())

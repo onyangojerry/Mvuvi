@@ -10,6 +10,10 @@ from fastapi.responses import JSONResponse
 
 from src.config import get_settings
 from src.api.v1 import router as v1_router
+from src.middleware.logging import LoggingMiddleware
+from src.monitoring.metrics import metrics_middleware, get_metrics
+from src.utils.logger import setup_logging
+from src.database import init_db, check_db_connection
 
 settings = get_settings()
 
@@ -21,6 +25,25 @@ async def lifespan(app: FastAPI) -> AsyncGenerator:
     print(f"Starting {settings.app_name} v{settings.app_version}")
     print(f"Environment: {settings.environment}")
     print(f"Debug mode: {settings.debug}")
+    
+    # Setup structured logging
+    setup_logging(level=settings.log_level if hasattr(settings, 'log_level') else "INFO")
+    print("[OK] Structured logging configured")
+    
+    # Initialize database (if configured)
+    try:
+        if settings.database_url and not settings.database_url.endswith("/postgres"):
+            await init_db()
+            db_healthy = await check_db_connection()
+            if db_healthy:
+                print("[OK] Database connection established")
+            else:
+                print("[WARN] Database connection failed (optional for current features)")
+        else:
+            print("[INFO] Database not configured (optional for current features)")
+    except Exception as e:
+        print(f"[WARN] Database initialization failed: {e}")
+        print("  Application will run without database features")
     
     yield
     
@@ -38,7 +61,11 @@ app = FastAPI(
 )
 
 
-# Middleware
+# Middleware - ORDER MATTERS!
+# 1. Logging middleware (first to capture all requests)
+app.add_middleware(LoggingMiddleware)
+
+# 2. CORS middleware
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.allowed_origins,
@@ -46,7 +73,12 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# 3. GZip middleware
 app.add_middleware(GZipMiddleware, minimum_size=1000)
+
+# 4. Metrics middleware
+app.middleware("http")(metrics_middleware)
 
 
 # Include API routers
@@ -72,6 +104,12 @@ async def health_check():
         "status": "healthy",
         "version": settings.app_version,
     }
+
+
+@app.get("/metrics", tags=["Monitoring"])
+async def metrics():
+    """Prometheus metrics endpoint."""
+    return await get_metrics()
 
 
 @app.exception_handler(Exception)

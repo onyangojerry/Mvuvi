@@ -22,7 +22,7 @@ from src.services.news_ingestion import NewsDataManager
 from src.middleware.authorization import require_permission
 from src.monitoring.metrics import track_api_call
 
-router = APIRouter(prefix="/api/v1/news", tags=["news"])
+router = APIRouter(tags=["news"])
 news_manager = NewsDataManager()
 
 
