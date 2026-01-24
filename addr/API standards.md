@@ -10,7 +10,7 @@
 
 **Examples**:
 ```
-✅ Good:
+[Done] Good:
 GET /api/v1/news-articles
 POST /api/v1/newspaper-uploads
 GET /api/v1/users/preferences

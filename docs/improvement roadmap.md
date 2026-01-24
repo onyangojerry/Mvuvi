@@ -1,6 +1,6 @@
 # Improvement Roadmap
 
-## Completed (January 2026) ✅
+## Completed (January 2026) [Done]
 
 ### Core Infrastructure
 - [x] FastAPI framework implementation

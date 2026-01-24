@@ -4,39 +4,39 @@
 **Version**: 1.0.0  
 **Status**: Core Development Phase
 
-## 🎯 One-Minute Overview
+##  One-Minute Overview
 
 **What it is**: Newspaper ingestion API with OCR, AI processing, and personalized feeds  
 **Tech Stack**: FastAPI + Python 3.9 + PostgreSQL (configured) + 3 OCR engines  
 **Status**: API operational with OCR, database pending, algorithms in design  
 **Running**: http://localhost:8000 with Swagger docs at /docs
 
-## ✅ What's Working Right Now
+## [Done] What's Working Right Now
 
-- ✅ FastAPI server (startup ~2s)
-- ✅ OCR with Tesseract, EasyOCR, PaddleOCR
-- ✅ Image preprocessing pipeline
-- ✅ File upload & validation
-- ✅ Batch processing
-- ✅ Interactive API docs at /docs
-- ✅ 10 operational endpoints
+- [Done] FastAPI server (startup ~2s)
+- [Done] OCR with Tesseract, EasyOCR, PaddleOCR
+- [Done] Image preprocessing pipeline
+- [Done] File upload & validation
+- [Done] Batch processing
+- [Done] Interactive API docs at /docs
+- [Done] 10 operational endpoints
 
-## 🔄 What's In Progress
+## [In Progress] What's In Progress
 
-- 🔄 Database setup (PostgreSQL configured, not installed)
-- 🔄 Redis caching (configured, not running)
-- 🔄 News feed logic (endpoints exist, algorithms pending)
-- 🔄 Authentication (JWT libraries installed)
+- [In Progress] Database setup (PostgreSQL configured, not installed)
+- [In Progress] Redis caching (configured, not running)
+- [In Progress] News feed logic (endpoints exist, algorithms pending)
+- [In Progress] Authentication (JWT libraries installed)
 
-## 📋 What's Planned
+## [Planned] What's Planned
 
-- 📋 Neural network error correction (Q2 2026)
-- 📋 Randomization algorithms (Q1 2026)
-- 📋 WebSocket real-time feed (Q3 2026)
-- 📋 Frontend UI (Q3-Q4 2026)
-- 📋 Production deployment (Q4 2026)
+- [Planned] Neural network error correction (Q2 2026)
+- [Planned] Randomization algorithms (Q1 2026)
+- [Planned] WebSocket real-time feed (Q3 2026)
+- [Planned] Frontend UI (Q3-Q4 2026)
+- [Planned] Production deployment (Q4 2026)
 
-## 🚀 Quick Start
+##  Quick Start
 
 ```bash
 cd /Users/loan/Desktop/Mvuvi/vuva
@@ -45,7 +45,7 @@ python -m src.main
 # Open http://localhost:8000/docs
 ```
 
-## 📊 Current Metrics
+##  Current Metrics
 
 | Metric | Current | Target |
 |--------|---------|--------|
@@ -56,34 +56,34 @@ python -m src.main
 | Test Coverage | 0% | 80% |
 | Documentation | 95% | 100% |
 
-## 🔧 Key Technologies
+##  Key Technologies
 
 | Component | Technology | Version | Status |
 |-----------|-----------|---------|--------|
-| Framework | FastAPI | 0.109.0 | ✅ Running |
-| Server | Uvicorn | 0.27.0 | ✅ Running |
-| OCR 1 | Tesseract | 0.3.10 | ✅ Operational |
-| OCR 2 | EasyOCR | 1.7.1 | ✅ Operational |
-| OCR 3 | PaddleOCR | 2.7.3 | ✅ Operational |
-| Database | PostgreSQL | 15+ | ⚙️ Configured |
-| Cache | Redis | 7+ | ⚙️ Configured |
-| ML | PyTorch | 2.8.0 | ✅ Installed |
+| Framework | FastAPI | 0.109.0 | [Done] Running |
+| Server | Uvicorn | 0.27.0 | [Done] Running |
+| OCR 1 | Tesseract | 0.3.10 | [Done] Operational |
+| OCR 2 | EasyOCR | 1.7.1 | [Done] Operational |
+| OCR 3 | PaddleOCR | 2.7.3 | [Done] Operational |
+| Database | PostgreSQL | 15+ | [Config] Configured |
+| Cache | Redis | 7+ | [Config] Configured |
+| ML | PyTorch | 2.8.0 | [Done] Installed |
 
 ## 📁 Project Structure
 
 ```
 vuva/
-├── src/               # Source code (16 files) ✅
-├── docs/              # Documentation (11 files) ✅
-├── addr/              # Standards (4 files) ✅
-├── tests/             # Tests (4 files, not run) 🔄
-├── venv/              # Virtual environment ✅
-├── requirements.txt   # Dependencies (62 lines) ✅
-├── .env               # Configuration ✅
-└── README.md          # Main documentation ✅
+├── src/               # Source code (16 files) [Done]
+├── docs/              # Documentation (11 files) [Done]
+├── addr/              # Standards (4 files) [Done]
+├── tests/             # Tests (4 files, not run) [In Progress]
+├── venv/              # Virtual environment [Done]
+├── requirements.txt   # Dependencies (62 lines) [Done]
+├── .env               # Configuration [Done]
+└── README.md          # Main documentation [Done]
 ```
 
-## 🎯 Next 5 Tasks (Priority Order)
+##  Next 5 Tasks (Priority Order)
 
 1. **Install PostgreSQL** - Create database for persistent storage
 2. **Run tests** - Execute pytest and fix failures
@@ -91,7 +91,7 @@ vuva/
 4. **Connect news sources** - Integrate RSS feeds
 5. **Build algorithms** - Implement randomization logic
 
-## 📞 Quick Links
+##  Quick Links
 
 - **API Docs**: http://localhost:8000/docs
 - **ReDoc**: http://localhost:8000/redoc
@@ -110,30 +110,30 @@ vuva/
 
 ## 💡 Key Decisions Made
 
-- **Database**: PostgreSQL (not Supabase) ✅
-- **OCR Strategy**: Multi-engine with lazy-loading ✅
-- **Framework**: FastAPI (not Express.js) ✅
+- **Database**: PostgreSQL (not Supabase) [Done]
+- **OCR Strategy**: Multi-engine with lazy-loading [Done]
+- **Framework**: FastAPI (not Express.js) [Done]
 - **Deployment**: Docker + K8s (planned)
 - **Frontend**: React/Next.js (planned)
 
-## 📈 Progress Summary
+##  Progress Summary
 
-**Phase 1 (Foundation)**: ✅ 100% Complete
-- API framework ✅
-- OCR integration ✅
-- Documentation ✅
+**Phase 1 (Foundation)**: [Done] 100% Complete
+- API framework [Done]
+- OCR integration [Done]
+- Documentation [Done]
 
-**Phase 2 (Data Layer)**: 🔄 40% Complete
+**Phase 2 (Data Layer)**: [In Progress] 40% Complete
 - Database (configured, not active)
 - Caching (configured, not active)
 - News sources (not started)
 
-**Phase 3 (Intelligence)**: 📋 10% Complete
+**Phase 3 (Intelligence)**: [Planned] 10% Complete
 - Algorithms (designed, not coded)
 - Neural networks (not started)
 - Agentic systems (not started)
 
-**Phase 4 (Frontend)**: 📋 0% Complete
+**Phase 4 (Frontend)**: [Planned] 0% Complete
 - All frontend work pending
 
 ## 🎓 For New Team Members
@@ -155,17 +155,17 @@ DEBUG=True
 API_PORT=8000
 ```
 
-## 📝 Recent Changes
+##  Recent Changes
 
 **January 24, 2026**:
-- ✅ Completed OCR integration (all 3 engines)
-- ✅ Added lazy-loading for memory optimization
-- ✅ Updated all documentation to reflect current state
-- ✅ Created comprehensive README
-- ✅ Fixed API startup issues
-- ✅ Verified all dependencies installed
+- [Done] Completed OCR integration (all 3 engines)
+- [Done] Added lazy-loading for memory optimization
+- [Done] Updated all documentation to reflect current state
+- [Done] Created comprehensive README
+- [Done] Fixed API startup issues
+- [Done] Verified all dependencies installed
 
-## 🎯 This Week's Goals
+##  This Week's Goals
 
 - [ ] Install PostgreSQL and create database
 - [ ] Implement database models with SQLAlchemy

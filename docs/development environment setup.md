@@ -2,10 +2,10 @@
 
 ## Prerequisites
 
-### Required Software ✅ VERIFIED
-- **Python 3.9+**: ✅ For backend API and ML components
-- **Git**: ✅ Version control
-- **Tesseract OCR**: ✅ Required for OCR functionality
+### Required Software [Done] VERIFIED
+- **Python 3.9+**: [Done] For backend API and ML components
+- **Git**: [Done] Version control
+- **Tesseract OCR**: [Done] Required for OCR functionality
   - macOS: `brew install tesseract`
   - Ubuntu: `apt-get install tesseract-ocr`
   - Windows: Download installer from GitHub
@@ -18,19 +18,19 @@
 
 ### Development Tools
 - **IDE**: VS Code (recommended)
-- **API Testing**: Built-in Swagger UI at /docs ✅
+- **API Testing**: Built-in Swagger UI at /docs [Done]
 
-## Installation Steps ✅ COMPLETED
+## Installation Steps [Done] COMPLETED
 
 ### 1. Project Setup
 ```bash
 # Navigate to project
 cd /Users/loan/Desktop/Mvuvi/vuva
 
-# Project structure already created ✅
+# Project structure already created [Done]
 ```
 
-### 2. Python Environment ✅
+### 2. Python Environment [Done]
 ```bash
 # Virtual environment already created at:
 # /Users/loan/Desktop/Mvuvi/vuva/venv
@@ -39,13 +39,13 @@ cd /Users/loan/Desktop/Mvuvi/vuva
 source venv/bin/activate  # macOS/Linux
 # venv\Scripts\activate  # Windows
 
-# Dependencies already installed ✅
+# Dependencies already installed [Done]
 # See requirements.txt for full list
 ```
 
-### 3. Environment Configuration ✅
+### 3. Environment Configuration [Done]
 ```bash
-# .env file already configured ✅
+# .env file already configured [Done]
 # Located at: /Users/loan/Desktop/Mvuvi/vuva/.env
 
 # Key settings:
@@ -55,7 +55,7 @@ source venv/bin/activate  # macOS/Linux
 # - DEBUG: True (development mode)
 ```
 
-### 4. Install Tesseract OCR ✅
+### 4. Install Tesseract OCR [Done]
 ```bash
 # macOS
 brew install tesseract
@@ -65,7 +65,7 @@ tesseract --version
 # Should show: tesseract 5.x.x
 ```
 
-### 5. Database Setup 🔴 PENDING
+### 5. Database Setup [Urgent] PENDING
 ```bash
 # PostgreSQL not yet installed
 # When ready:
@@ -79,7 +79,7 @@ tesseract --version
 # alembic upgrade head
 ```
 
-### 6. Redis Setup 🔴 PENDING
+### 6. Redis Setup [Urgent] PENDING
 ```bash
 # Redis not yet installed
 # When ready:
@@ -89,7 +89,7 @@ tesseract --version
 
 ## Running the Application
 
-### Development Mode ✅ WORKING
+### Development Mode [Done] WORKING
 
 **Method 1: Direct Python (Recommended)**
 ```bash
@@ -110,13 +110,13 @@ cd /Users/loan/Desktop/Mvuvi/vuva
 PYTHONPATH=/Users/loan/Desktop/Mvuvi/vuva venv/bin/python -m src.main
 ```
 
-**Access Points** ✅:
+**Access Points** [Done]:
 - **API**: http://localhost:8000 or http://0.0.0.0:8000
 - **Interactive Docs**: http://localhost:8000/docs (Swagger UI)
 - **ReDoc**: http://localhost:8000/redoc
 - **OpenAPI JSON**: http://localhost:8000/openapi.json
 
-### Background Services 🔴 NOT YET IMPLEMENTED
+### Background Services [Urgent] NOT YET IMPLEMENTED
 ```bash
 # PostgreSQL (when installed)
 # brew services start postgresql@15
@@ -128,7 +128,7 @@ PYTHONPATH=/Users/loan/Desktop/Mvuvi/vuva venv/bin/python -m src.main
 # celery -A app worker -l info
 ```
 
-### Docker Compose 🔴 NOT YET CONFIGURED
+### Docker Compose [Urgent] NOT YET CONFIGURED
 ```bash
 # Future implementation
 # docker-compose up

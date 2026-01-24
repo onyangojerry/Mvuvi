@@ -5,22 +5,22 @@ Comprehensive technology choices for the Newspaper Ingestion API system, priorit
 
 ## Backend Stack
 
-### API Framework ✅ IMPLEMENTED
+### API Framework [Done] IMPLEMENTED
 **Chosen**: **FastAPI 0.109.0** (Python)
-- **Status**: ✅ Fully operational
+- **Status**: [Done] Fully operational
 - **Features Implemented**: 
-  - ✅ Async/await pattern throughout
-  - ✅ Automatic OpenAPI documentation at /docs
-  - ✅ Pydantic 2.5.3 for validation
-  - ✅ CORS and GZip middleware
-  - ✅ Global exception handling
-  - ✅ Lifespan management
+  - [Done] Async/await pattern throughout
+  - [Done] Automatic OpenAPI documentation at /docs
+  - [Done] Pydantic 2.5.3 for validation
+  - [Done] CORS and GZip middleware
+  - [Done] Global exception handling
+  - [Done] Lifespan management
 - **Server**: Uvicorn 0.27.0 with hot-reload
 
 ### Programming Languages
-- **Python 3.9+**: ✅ Main backend (current implementation)
-- **JavaScript/TypeScript**: 🔴 Not yet used (planned for frontend)
-- **Go**: 🔴 Not planned currently
+- **Python 3.9+**: [Done] Main backend (current implementation)
+- **JavaScript/TypeScript**: [Urgent] Not yet used (planned for frontend)
+- **Go**: [Urgent] Not planned currently
 
 ### API Standards
 - **REST**: Primary API pattern
@@ -54,31 +54,31 @@ Comprehensive technology choices for the Newspaper Ingestion API system, priorit
 
 ## AI/ML Stack
 
-### OCR Engines ✅ IMPLEMENTED
+### OCR Engines [Done] IMPLEMENTED
 **Multi-engine Approach**: All three engines integrated with lazy-loading
 
-1. **Tesseract OCR** (Primary) ✅
+1. **Tesseract OCR** (Primary) [Done]
    - **Version**: pytesseract 0.3.10
-   - **Status**: ✅ Fully operational
+   - **Status**: [Done] Fully operational
    - **Features**: Command-line interface, fast processing
    - **Best for**: Standard newspaper text
    - **Lazy-loaded**: No (lightweight CLI tool)
 
-2. **EasyOCR** (Secondary) ✅
+2. **EasyOCR** (Secondary) [Done]
    - **Version**: 1.7.1 (with PyTorch 2.8.0)
-   - **Status**: ✅ Fully operational with lazy-loading
+   - **Status**: [Done] Fully operational with lazy-loading
    - **Features**: Deep learning, 80+ languages
    - **Best for**: Complex layouts, low-quality scans
    - **Lazy-loaded**: Yes (deferred torch import)
 
-3. **PaddleOCR** (Fallback) ✅
+3. **PaddleOCR** (Fallback) [Done]
    - **Version**: 2.7.3 (with PaddlePaddle 2.6.0)
-   - **Status**: ✅ Fully operational with lazy-loading
+   - **Status**: [Done] Fully operational with lazy-loading
    - **Features**: Fast inference, mobile-optimized
    - **Best for**: Asian languages, batch processing
    - **Lazy-loaded**: Yes (deferred import)
 
-**Image Preprocessing Pipeline** ✅:
+**Image Preprocessing Pipeline** [Done]:
 - Grayscale conversion
 - Gaussian blur noise reduction
 - Adaptive threshold
@@ -117,13 +117,13 @@ Comprehensive technology choices for the Newspaper Ingestion API system, priorit
 
 ## Data Layer
 
-### Primary Database ⚙️ CONFIGURED
+### Primary Database [Config] CONFIGURED
 **PostgreSQL 15+** (Not yet installed)
-- **Driver**: asyncpg 0.29.0 ✅
-- **ORM**: SQLAlchemy 2.0.25 ✅
-- **Migrations**: Alembic 1.13.1 ✅
+- **Driver**: asyncpg 0.29.0 [Done]
+- **ORM**: SQLAlchemy 2.0.25 [Done]
+- **Migrations**: Alembic 1.13.1 [Done]
 - **Connection String**: `postgresql+asyncpg://postgres:password@localhost:5432/newspaper_db`
-- **Status**: ⚙️ Configured but database not created
+- **Status**: [Config] Configured but database not created
 - **Planned Schema**: 
   - Users and authentication
   - News articles and metadata
@@ -135,11 +135,11 @@ Comprehensive technology choices for the Newspaper Ingestion API system, priorit
 - `pg_trgm`: Full-text search
 - `uuid-ossp`: UUID generation
 
-### Cache Layer ⚙️ CONFIGURED
+### Cache Layer [Config] CONFIGURED
 **Redis 7+** (Not yet installed)
-- **Client**: redis 5.0.1, aioredis 2.0.1 ✅
+- **Client**: redis 5.0.1, aioredis 2.0.1 [Done]
 - **Connection String**: `redis://localhost:6379/0`
-- **Status**: ⚙️ Configured but not running
+- **Status**: [Config] Configured but not running
 - **Planned Uses**:
   - Session management
   - Rate limiting

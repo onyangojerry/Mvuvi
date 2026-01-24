@@ -44,73 +44,73 @@
 
 ## Core Services
 
-### 1. Ingestion API Service ✅ IMPLEMENTED
+### 1. Ingestion API Service [Done] IMPLEMENTED
 **Purpose**: Handle newspaper image uploads and initial processing
 **Status**: Structure complete, pending database integration
 
 **Endpoints**:
-- `POST /api/v1/ingest/upload` ✅ - Upload newspaper image (validation ready)
-- `POST /api/v1/ingest/batch` ✅ - Batch upload multiple images
-- `GET /api/v1/ingest/status/{id}` ⚙️ - Check processing status (pending DB)
-- `GET /api/v1/ingest/history` ⚙️ - Get upload history (pending DB)
+- `POST /api/v1/ingest/upload` [Done] - Upload newspaper image (validation ready)
+- `POST /api/v1/ingest/batch` [Done] - Batch upload multiple images
+- `GET /api/v1/ingest/status/{id}` [Config] - Check processing status (pending DB)
+- `GET /api/v1/ingest/history` [Config] - Get upload history (pending DB)
 
 **Responsibilities**:
-- ✅ Image validation (type, size)
-- ✅ File upload handling with multipart
-- 🔴 Storage to S3/local (pending)
-- 🔴 Queue jobs for OCR processing (pending)
-- 🔴 Track processing status (pending DB)
+- [Done] Image validation (type, size)
+- [Done] File upload handling with multipart
+- [Urgent] Storage to S3/local (pending)
+- [Urgent] Queue jobs for OCR processing (pending)
+- [Urgent] Track processing status (pending DB)
 
-### 2. OCR API Service ✅ IMPLEMENTED
+### 2. OCR API Service [Done] IMPLEMENTED
 **Purpose**: Extract text from newspaper images using multiple OCR engines
 **Status**: Fully operational with 3 engines
 
 **Endpoints**:
-- `POST /api/v1/ocr/extract` ✅ - Single image OCR
-- `POST /api/v1/ocr/extract/compare` ✅ - Compare all 3 engines
-- `POST /api/v1/ocr/extract/batch` ✅ - Batch processing
-- `GET /api/v1/ocr/engines` ✅ - List available engines
+- `POST /api/v1/ocr/extract` [Done] - Single image OCR
+- `POST /api/v1/ocr/extract/compare` [Done] - Compare all 3 engines
+- `POST /api/v1/ocr/extract/batch` [Done] - Batch processing
+- `GET /api/v1/ocr/engines` [Done] - List available engines
 
 **Engines Available**:
-- ✅ Tesseract OCR (fast, reliable)
-- ✅ EasyOCR (deep learning, complex layouts)
-- ✅ PaddleOCR (mobile-optimized, Asian languages)
+- [Done] Tesseract OCR (fast, reliable)
+- [Done] EasyOCR (deep learning, complex layouts)
+- [Done] PaddleOCR (mobile-optimized, Asian languages)
 
 **Features**:
-- ✅ Lazy-loading for memory efficiency
-- ✅ Image preprocessing pipeline
-- ✅ Confidence scoring
-- ✅ Multi-language support
-- ✅ Async processing with executor pool
+- [Done] Lazy-loading for memory efficiency
+- [Done] Image preprocessing pipeline
+- [Done] Confidence scoring
+- [Done] Multi-language support
+- [Done] Async processing with executor pool
 
-### 3. News Feed API Service ⚙️ PARTIALLY IMPLEMENTED
+### 3. News Feed API Service [Config] PARTIALLY IMPLEMENTED
 **Purpose**: Deliver personalized news feed using randomization algorithms
 **Status**: Endpoint structure ready, logic pending
 
 **Endpoints**:
-- `GET /api/v1/feed` ⚙️ - Get personalized news feed (structure only)
-- `GET /api/v1/feed/stream` 🔴 - WebSocket for real-time updates (not implemented)
-- `POST /api/v1/feed/preferences` 🔴 - Update user preferences (pending)
-- `GET /api/v1/feed/article/{id}` 🔴 - Get specific article (pending DB)
+- `GET /api/v1/feed` [Config] - Get personalized news feed (structure only)
+- `GET /api/v1/feed/stream` [Urgent] - WebSocket for real-time updates (not implemented)
+- `POST /api/v1/feed/preferences` [Urgent] - Update user preferences (pending)
+- `GET /api/v1/feed/article/{id}` [Urgent] - Get specific article (pending DB)
 
 **Responsibilities**:
-- 🔴 Apply randomization algorithms
-- 🔴 Real-time feed delivery
-- 🔴 Content filtering and ranking
-- 🔴 Personalization engine
+- [Urgent] Apply randomization algorithms
+- [Urgent] Real-time feed delivery
+- [Urgent] Content filtering and ranking
+- [Urgent] Personalization engine
 
-### 4. Health & Monitoring ✅ IMPLEMENTED
+### 4. Health & Monitoring [Done] IMPLEMENTED
 **Purpose**: System health checks and monitoring
 **Status**: Operational
 
 **Endpoints**:
-- `GET /` ✅ - Root with API information
-- `GET /health` ✅ - Health check endpoint
-- `GET /api/v1/health` ✅ - Detailed health status
-- `GET /docs` ✅ - Interactive API documentation (Swagger UI)
-- `GET /redoc` ✅ - ReDoc API documentation
+- `GET /` [Done] - Root with API information
+- `GET /health` [Done] - Health check endpoint
+- `GET /api/v1/health` [Done] - Detailed health status
+- `GET /docs` [Done] - Interactive API documentation (Swagger UI)
+- `GET /redoc` [Done] - ReDoc API documentation
 
-### 5. User Service API 🔴 NOT IMPLEMENTED
+### 5. User Service API [Urgent] NOT IMPLEMENTED
 **Purpose**: Manage user accounts and preferences
 **Status**: Planned, not started
 
@@ -156,27 +156,27 @@
 
 ### 1. Image Upload Flow (Current Implementation)
 ```
-User uploads image ✅ → FastAPI Endpoint ✅ → File Validation ✅
-  → Temporary Storage ✅ → OCR Service ✅
-  → Text Extraction ✅ → Return Result ✅
+User uploads image [Done] → FastAPI Endpoint [Done] → File Validation [Done]
+  → Temporary Storage [Done] → OCR Service [Done]
+  → Text Extraction [Done] → Return Result [Done]
   
-[Pending: S3 Storage 🔴, Database Logging 🔴, Queue System 🔴]
+[Pending: S3 Storage [Urgent], Database Logging [Urgent], Queue System [Urgent]]
 ```
 
 ### 2. OCR Processing Flow (Implemented)
 ```
-Image File → ImagePreprocessor ✅
-  → Grayscale + Denoise + Threshold ✅
-  → OCR Engine (Tesseract/EasyOCR/PaddleOCR) ✅
-  → Text Extraction + Confidence Score ✅
-  → Return OCRResult ✅
+Image File → ImagePreprocessor [Done]
+  → Grayscale + Denoise + Threshold [Done]
+  → OCR Engine (Tesseract/EasyOCR/PaddleOCR) [Done]
+  → Text Extraction + Confidence Score [Done]
+  → Return OCRResult [Done]
 ```
 
 ### 3. Real-time Feed Flow (Not Yet Implemented)
 ```
-User requests feed 🔴 → API Gateway 🔴 → Feed Service 🔴
-  → Randomization Algorithm 🔴 → Database Query 🔴
-  → Apply Filters 🔴 → WebSocket Stream 🔴 → User Display 🔴
+User requests feed [Urgent] → API Gateway [Urgent] → Feed Service [Urgent]
+  → Randomization Algorithm [Urgent] → Database Query [Urgent]
+  → Apply Filters [Urgent] → WebSocket Stream [Urgent] → User Display [Urgent]
 ```
 
 ## Technology Stack
@@ -226,13 +226,13 @@ User requests feed 🔴 → API Gateway 🔴 → Feed Service 🔴
 ## Performance Targets
 
 ### Current Metrics (Development)
-- **API Startup Time**: ~2 seconds (with lazy-loading) ✅
-- **Health Check Response**: <50ms ✅
+- **API Startup Time**: ~2 seconds (with lazy-loading) [Done]
+- **Health Check Response**: <50ms [Done]
 - **OCR Processing**: 
   - Tesseract: 1-3 seconds per image
   - EasyOCR: 3-8 seconds per image (first load + processing)
   - PaddleOCR: 2-5 seconds per image
-- **API Response Time**: <100ms for simple endpoints ✅
+- **API Response Time**: <100ms for simple endpoints [Done]
 
 ### Production Targets (Goals)
 - **API Response Time**: <100ms (p95)

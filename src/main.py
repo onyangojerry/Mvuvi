@@ -18,14 +18,14 @@ settings = get_settings()
 async def lifespan(app: FastAPI) -> AsyncGenerator:
     """Application lifespan events."""
     # Startup
-    print(f"🚀 Starting {settings.app_name} v{settings.app_version}")
-    print(f"📝 Environment: {settings.environment}")
-    print(f"🔧 Debug mode: {settings.debug}")
+    print(f"Starting {settings.app_name} v{settings.app_version}")
+    print(f"Environment: {settings.environment}")
+    print(f"Debug mode: {settings.debug}")
     
     yield
     
     # Shutdown
-    print("👋 Shutting down application")
+    print("Shutting down application")
 
 
 app = FastAPI(

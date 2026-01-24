@@ -9,19 +9,19 @@
 
 ---
 
-## 📊 Progress Overview
+##  Progress Overview
 
 | Phase | Status | Completion | Timeline |
 |-------|--------|------------|----------|
-| Phase 1: Foundation | ✅ Complete | 100% | Week 1-2 |
-| Phase 2: Data Layer | 🔄 In Progress | 40% | Week 3-4 |
-| Phase 3: Intelligence | 📋 Planned | 0% | Week 5-6 |
-| Phase 4: Real-time & Frontend | 📋 Planned | 0% | Week 7-8 |
-| Phase 5: Production | 📋 Planned | 0% | Week 9-10 |
+| Phase 1: Foundation | [Complete] Complete | 100% | Week 1-2 |
+| Phase 2: Data Layer | [In Progress] In Progress | 40% | Week 3-4 |
+| Phase 3: Intelligence | [Planned] Planned | 0% | Week 5-6 |
+| Phase 4: Real-time & Frontend | [Planned] Planned | 0% | Week 7-8 |
+| Phase 5: Production | [Planned] Planned | 0% | Week 9-10 |
 
 ---
 
-## Phase 1: Foundation ✅ COMPLETE
+## Phase 1: Foundation [Complete] COMPLETE
 
 **Duration:** 2 weeks  
 **Status:** 100% Complete  
@@ -87,7 +87,7 @@
 
 ---
 
-## Phase 2: Data Layer 🔄 IN PROGRESS
+## Phase 2: Data Layer [In Progress] IN PROGRESS
 
 **Duration:** 2 weeks (Week 3-4)  
 **Status:** 40% Complete  
@@ -95,7 +95,7 @@
 
 ### Objectives
 
-1. **Database Implementation** 🔴 Critical
+1. **Database Implementation** [Critical] Critical
    - [ ] Install PostgreSQL locally
    - [ ] Configure connection pool with asyncpg
    - [ ] Create database schema
@@ -103,7 +103,7 @@
    - [ ] Set up Alembic migrations
    - [ ] Seed initial data
    
-2. **Data Models** 🔴 Critical
+2. **Data Models** [Critical] Critical
    - [ ] User model (authentication)
    - [ ] Newspaper model (metadata)
    - [ ] Article model (extracted content)
@@ -111,7 +111,7 @@
    - [ ] Source model (news sources)
    - [ ] Upload history model
    
-3. **Redis Caching** 🟡 High
+3. **Redis Caching** [High] High
    - [ ] Install Redis server
    - [ ] Configure redis-py client
    - [ ] Implement caching layer
@@ -119,7 +119,7 @@
    - [ ] Cache feed data (TTL: 5 minutes)
    - [ ] Cache invalidation strategy
    
-4. **Authentication** 🔴 Critical
+4. **Authentication** [Critical] Critical
    - [ ] JWT token generation
    - [ ] Token validation middleware
    - [ ] User registration endpoint
@@ -127,14 +127,14 @@
    - [ ] Password hashing (bcrypt)
    - [ ] Refresh token mechanism
    
-5. **News Source Integration** 🟡 High
+5. **News Source Integration** [High] High
    - [ ] RSS feed parser
    - [ ] News API integration (e.g., NewsAPI.org)
    - [ ] Web scraping for newspapers
    - [ ] Source configuration management
    - [ ] Scheduled fetching (cron jobs)
    
-6. **Testing** 🔴 Critical
+6. **Testing** [Critical] Critical
    - [ ] Install pytest
    - [ ] Run existing unit tests
    - [ ] Add integration tests
@@ -155,7 +155,7 @@
 
 ---
 
-## Phase 3: Intelligence 📋 PLANNED
+## Phase 3: Intelligence [Planned] PLANNED
 
 **Duration:** 2 weeks (Week 5-6)  
 **Status:** Not Started  
@@ -209,7 +209,7 @@
 
 ---
 
-## Phase 4: Real-time & Frontend 📋 PLANNED
+## Phase 4: Real-time & Frontend [Planned] PLANNED
 
 **Duration:** 2 weeks (Week 7-8)  
 **Status:** Not Started  
@@ -264,7 +264,7 @@
 
 ---
 
-## Phase 5: Production 📋 PLANNED
+## Phase 5: Production [Planned] PLANNED
 
 **Duration:** 2 weeks (Week 9-10)  
 **Status:** Not Started  
@@ -338,21 +338,21 @@
 
 ---
 
-## 🎯 Critical Path Items
+##  Critical Path Items
 
 ### Immediate Priorities (Next 2 Weeks)
 
-1. **Database Setup** 🔴 Blocking
+1. **Database Setup** [Critical] Blocking
    - Install PostgreSQL
    - Create schema and models
    - Run migrations
    
-2. **Authentication** 🔴 Blocking
+2. **Authentication** [Critical] Blocking
    - Implement JWT
    - User registration/login
    - Protect API endpoints
    
-3. **Testing** 🔴 Critical
+3. **Testing** [Critical] Critical
    - Install pytest
    - Run existing tests
    - Add integration tests
@@ -360,31 +360,31 @@
 
 ### Short-term Goals (Month 1)
 
-4. **Redis Caching** 🟡 High
+4. **Redis Caching** [High] High
    - Install and configure
    - Implement caching layer
    - Benchmark performance
    
-5. **News Sources** 🟡 High
+5. **News Sources** [High] High
    - Integrate 5+ RSS feeds
    - Schedule fetching
    - Store in database
 
 ### Long-term Vision (Months 2-3)
 
-6. **Intelligence Layer** 🟢 Medium
+6. **Intelligence Layer** [Medium] Medium
    - OCR enhancement model
    - Personalization algorithms
    - Agentic systems
    
-7. **User Experience** 🟢 Medium
+7. **User Experience** [Medium] Medium
    - Frontend application
    - Real-time features
    - Mobile support
 
 ---
 
-## 📈 Success Metrics
+##  Success Metrics
 
 ### Technical KPIs
 
@@ -409,53 +409,53 @@
 
 ---
 
-## 🚧 Known Blockers & Risks
+##  Known Blockers & Risks
 
 ### Current Blockers
 
-1. **PostgreSQL Not Installed** 🔴
+1. **PostgreSQL Not Installed** [Critical]
    - **Impact:** Cannot implement data persistence
    - **Mitigation:** Install via Homebrew: `brew install postgresql`
    
-2. **Redis Not Running** 🔴
+2. **Redis Not Running** [Critical]
    - **Impact:** No caching available
    - **Mitigation:** Install via Homebrew: `brew install redis`
    
-3. **No Test Execution** 🔴
+3. **No Test Execution** [Critical]
    - **Impact:** Code quality unknown
    - **Mitigation:** Install pytest: `pip install pytest pytest-asyncio`
 
 ### Technical Risks
 
-1. **OCR Accuracy** 🟡
+1. **OCR Accuracy** [High]
    - **Risk:** Lower than expected for poor-quality images
    - **Mitigation:** Implement ML error correction (Phase 3)
    
-2. **Scalability** 🟡
+2. **Scalability** [High]
    - **Risk:** OCR processing CPU-intensive
    - **Mitigation:** Queue-based processing, horizontal scaling
    
-3. **Data Quality** 🟡
+3. **Data Quality** [High]
    - **Risk:** News sources may be unreliable
    - **Mitigation:** Quality scoring, manual curation
 
 ### Operational Risks
 
-1. **Security** 🔴
+1. **Security** [Critical]
    - **Risk:** Currently no authentication
    - **Mitigation:** JWT implementation in Phase 2
    
-2. **Performance** 🟡
+2. **Performance** [High]
    - **Risk:** Database queries may slow down
    - **Mitigation:** Redis caching, query optimization
    
-3. **Cost** 🟢
+3. **Cost** [Medium]
    - **Risk:** Cloud hosting costs
    - **Mitigation:** Optimize resource usage, monitor spend
 
 ---
 
-## 🔄 Change Log
+## [In Progress] Change Log
 
 ### January 2025
 - **Jan 24:** README simplified, roadmap.md created
@@ -469,7 +469,7 @@
 
 ---
 
-## 📞 Feedback & Adjustments
+##  Feedback & Adjustments
 
 This roadmap is a living document. Adjustments will be made based on:
 - Technical feasibility assessments

@@ -7,7 +7,7 @@
 ![FastAPI](https://img.shields.io/badge/FastAPI-0.109.0-green)
 ![License](https://img.shields.io/badge/license-MIT-blue)
 
-## 🚀 Quick Start
+## Quick Start
 
 ```bash
 # Activate virtual environment
@@ -20,14 +20,14 @@ python -m src.main
 open http://localhost:8000/docs
 ```
 
-## 🎯 What is Vuva?
+## What is Vuva?
 
 Vuva extracts text from newspaper images using three OCR engines (Tesseract, EasyOCR, PaddleOCR) and delivers personalized news feeds through novel randomization algorithms. Built with FastAPI for high-performance async operations.
 
 **Current Status:** Core API operational with OCR processing. Database and authentication in progress.
 
 
-## ✨ Key Features
+## Key Features
 
 - **Multi-Engine OCR**: Tesseract, EasyOCR, PaddleOCR with lazy-loading
 - **FastAPI Framework**: Async, type-safe, with auto-generated OpenAPI docs
@@ -35,7 +35,7 @@ Vuva extracts text from newspaper images using three OCR engines (Tesseract, Eas
 - **Batch Processing**: Handle multiple images concurrently
 - **RESTful API**: Versioned endpoints with proper HTTP methods
 
-## 📦 Installation
+## Installation
 
 ### Prerequisites
 - Python 3.9+
@@ -50,10 +50,10 @@ pip install -r requirements.txt
 cp .env.example .env  # Edit as needed
 
 # Verify setup
-python -c "import fastapi, pytesseract; print('✅ Ready')"
+python -c "import fastapi, pytesseract; print('Ready')"
 ```
 
-## 🔌 API Endpoints
+## API Endpoints
 
 | Endpoint | Method | Description |
 |----------|--------|-------------|
@@ -65,7 +65,7 @@ python -c "import fastapi, pytesseract; print('✅ Ready')"
 
 **See full API reference:** [API Architecture](docs/api%20architecture.md)
 
-## 📚 Documentation
+## Documentation
 
 | Document | Description |
 |----------|-------------|
@@ -78,7 +78,7 @@ python -c "import fastapi, pytesseract; print('✅ Ready')"
 
 **Standards:** [API Standards](addr/API%20standards.md) • [Security](addr/security%20standards.md) • [Workflow](addr/workflow.md)
 
-## 🛠️ Development
+## Development
 
 ```bash
 # Run tests (when pytest is installed)
@@ -94,7 +94,7 @@ src/
 └── config.py        # Configuration
 ```
 
-## 🤝 Contributing
+## Contributing
 
 1. Fork the repository
 2. Create a feature branch: `git checkout -b feature-name`
@@ -104,11 +104,11 @@ src/
 6. Push: `git push origin feature-name`
 7. Open a Pull Request
 
-## 📄 License
+## License
 
 MIT License - See [LICENSE](LICENSE) file for details
 
-## 🏆 Acknowledgments
+## Acknowledgments
 
 Built with [FastAPI](https://fastapi.tiangolo.com/), [Tesseract OCR](https://github.com/tesseract-ocr/tesseract), [EasyOCR](https://github.com/JaidedAI/EasyOCR), and [PaddleOCR](https://github.com/PaddlePaddle/PaddleOCR)
 

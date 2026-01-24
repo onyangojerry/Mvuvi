@@ -241,7 +241,7 @@ newspaper_upload_schema = {
 
 **Example (Correct)**:
 ```python
-# ✅ Safe - parameterized query
+# [Done] Safe - parameterized query
 cursor.execute(
     "SELECT * FROM users WHERE email = %s",
     (user_email,)
@@ -582,12 +582,12 @@ alerts:
 ### GDPR (General Data Protection Regulation)
 
 **Requirements**:
-- ✅ Lawful basis for processing
-- ✅ Data minimization
-- ✅ Purpose limitation
-- ✅ Storage limitation
-- ✅ Integrity and confidentiality
-- ✅ Accountability
+- [Done] Lawful basis for processing
+- [Done] Data minimization
+- [Done] Purpose limitation
+- [Done] Storage limitation
+- [Done] Integrity and confidentiality
+- [Done] Accountability
 
 **User Rights**:
 - Right to access (export data)
