@@ -208,6 +208,126 @@ async def extract_text_from_image(
             os.remove(temp_path)
 
 
+@router.post("/transcribe-fast", summary="Fast image transcription")
+async def transcribe_fast(
+    image: UploadFile = File(..., description="Image file (PNG, JPG)"),
+):
+    """
+    FAST transcription endpoint optimized for immediate results.
+    
+    This endpoint is optimized for speed over accuracy:
+    - Uses Tesseract (fastest engine)
+    - Skips preprocessing (saves ~200ms)
+    - Returns minimal metadata
+    - Ideal for real-time applications
+    
+    **Performance**: ~100-300ms for typical newspaper images
+    
+    **Trade-offs**:
+    - Speed: Faster than /extract endpoint
+    - Accuracy: May be lower without preprocessing
+    - Use case: Real-time transcription, live scanning, quick previews
+    
+    **For higher accuracy**, use `/extract` with preprocessing enabled.
+    
+    **Example**:
+    ```bash
+    curl -X POST "http://localhost:8000/api/v1/ocr/transcribe-fast" \\
+      -F "image=@document.jpg"
+    ```
+    
+    **Response**:
+    ```json
+    {
+      "text": "Extracted text here...",
+      "confidence": 0.87,
+      "words": 245,
+      "processing_ms": 156
+    }
+    ```
+    """
+    # Validate file type
+    allowed_types = ["image/jpeg", "image/png", "image/jpg"]
+    if image.content_type not in allowed_types:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail={
+                "code": "INVALID_IMAGE_FORMAT",
+                "message": f"Unsupported file type: {image.content_type}",
+                "supported_formats": allowed_types,
+            },
+        )
+    
+    # Save uploaded file to temp location
+    file_extension = os.path.splitext(image.filename)[1] or ".jpg"
+    temp_path = tempfile.mktemp(suffix=file_extension)
+    
+    try:
+        import time
+        start_time = time.time()
+        
+        # Save file
+        contents = await image.read()
+        with open(temp_path, "wb") as f:
+            f.write(contents)
+        
+        # Get OCR service
+        ocr_service = get_ocr_service()
+        
+        # Check if Tesseract is available
+        if "tesseract" not in ocr_service.available_engines():
+            raise HTTPException(
+                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                detail={
+                    "code": "TESSERACT_NOT_AVAILABLE",
+                    "message": "Fast transcription requires Tesseract OCR",
+                    "hint": "Install with: brew install tesseract (macOS) or apt-get install tesseract-ocr (Linux)",
+                },
+            )
+        
+        # Fast extraction - no preprocessing, Tesseract only
+        result = await ocr_service.extract_text(
+            image_path=temp_path,
+            engine="tesseract",
+            language="eng",
+            preprocess=False,  # Skip preprocessing for speed
+        )
+        
+        processing_ms = int((time.time() - start_time) * 1000)
+        
+        # Return minimal response for speed
+        return {
+            "text": result["text"],
+            "confidence": result["confidence"],
+            "words": result["word_count"],
+            "processing_ms": processing_ms,
+        }
+    
+    except ValueError as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail={
+                "code": "EXTRACTION_ERROR",
+                "message": str(e),
+            },
+        )
+    
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail={
+                "code": "TRANSCRIPTION_FAILED",
+                "message": "Failed to transcribe image",
+                "error": str(e),
+            },
+        )
+    
+    finally:
+        # Clean up temp file
+        if os.path.exists(temp_path):
+            os.remove(temp_path)
+
+
 @router.post("/extract/compare", response_model=MultiEngineOCRResponse, summary="Compare multiple OCR engines")
 async def compare_ocr_engines(
     image: UploadFile = File(..., description="Image file to process"),
