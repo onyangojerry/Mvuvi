@@ -10,12 +10,149 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Planned
-- PostgreSQL database implementation with asyncpg
-- Redis caching layer activation
-- JWT authentication system
 - Neural network OCR error correction
 - WebSocket real-time feed streaming
 - Frontend React application
+
+---
+
+## [1.2.0] - 2026-01-24
+
+### Added - Critical Features Activation
+
+#### Enterprise Authentication System
+- **Argon2id Password Hashing** (OWASP recommended, Password Hashing Competition winner)
+  - Memory-hard algorithm (64MB) resistant to GPU/ASIC attacks
+  - Configurable: 3 iterations, 4 parallel threads, 32-byte hash output
+  - Timing-attack resistant verification
+  - Automatic password rehashing when parameters updated
+- **JWT Token System**
+  - Access tokens (15-minute expiry) for API access
+  - Refresh tokens (7-day expiry) for token rotation
+  - Secure token generation using Python secrets module
+  - JWT ID (jti) for potential token revocation
+  - RS256 algorithm for token signing
+- **Authentication Endpoints** (8 total):
+  - `POST /api/v1/auth/register` - User registration with password validation
+  - `POST /api/v1/auth/login` - Login with JWT access + refresh tokens
+  - `POST /api/v1/auth/refresh` - Token refresh mechanism
+  - `GET /api/v1/auth/me` - Get current authenticated user
+  - `POST /api/v1/auth/change-password` - Secure password change
+  - `POST /api/v1/auth/api-keys` - Generate API keys for programmatic access
+  - `GET /api/v1/auth/api-keys` - List user's API keys
+  - `DELETE /api/v1/auth/api-keys/:id` - Revoke API key
+- **Password Requirements**:
+  - Minimum 8 characters
+  - At least one uppercase letter
+  - At least one lowercase letter
+  - At least one digit
+- **Security Features**:
+  - API keys hashed in database (never stored in plain text)
+  - Timing-attack resistant password comparisons
+  - Email validation with dns verification
+  - User role system (free, basic, premium, admin)
+  - Rate limiting by user tier
+
+#### Database & Infrastructure
+- **PostgreSQL Database Fully Operational**
+  - Dedicated `vuva_app` database user created
+  - Proper privilege isolation and security
+  - 7 database tables created via Alembic migrations:
+    - `users` - User authentication and roles
+    - `sources` - News sources (RSS, API, scrape)
+    - `articles` - News articles with full metadata
+    - `api_keys` - API key management with rate limiting
+    - `user_preferences` - User settings and preferences
+    - `audit_logs` - Security audit trail
+    - `ocr_jobs` - OCR job tracking and performance
+  - Async database support with asyncpg + greenlet
+  - Connection pooling (20 connections)
+  - Alembic migrations configured for schema versioning
+- **Database Features**:
+  - UUID primary keys for all tables
+  - Automatic timestamps (created_at, updated_at)
+  - Foreign key relationships with cascading
+  - Optimized indexes for common queries
+  - JSON support for flexible metadata storage
+
+#### Middleware & Monitoring Integration
+- **Logging Middleware**
+  - Request ID generation (UUID) for tracking
+  - Duration tracking for all requests
+  - Client IP extraction
+  - Response headers: X-Request-ID, X-Process-Time
+  - Structured JSON logging to `logs/app.log`
+- **Metrics Middleware**
+  - Prometheus-compatible metrics collection
+  - Request count by endpoint, method, and status
+  - Request duration histograms
+  - OCR processing time tracking
+  - Database operation duration
+  - Cache hit/miss rates
+  - Active users tracking
+  - API error counting
+- **Monitoring Endpoints**:
+  - `GET /metrics` - Prometheus metrics endpoint
+  - Full integration with monitoring stack
+
+#### News API Activation
+- **News API Endpoints** (7 endpoints):
+  - `GET /api/v1/news/sources` - List all news sources
+  - `GET /api/v1/news/categories` - List news categories
+  - `GET /api/v1/news/{category}` - Get news by category (paginated)
+  - `GET /api/v1/news/hackernews/top` - Hacker News top stories
+  - `POST /api/v1/news/extract` - Full article extraction
+  - `POST /api/v1/news/search` - Search articles (placeholder)
+  - `GET /api/v1/news/all` - Get news from all categories
+- **Features**:
+  - Permission-based access control integration ready
+  - Request validation with Pydantic schemas
+  - Pagination support (limit, offset)
+  - Error handling with proper HTTP exceptions
+  - Metrics tracking integrated
+
+### Changed
+- **Database Configuration**
+  - Moved from default PostgreSQL user to dedicated `vuva_app` user
+  - Updated DATABASE_URL in .env for proper security isolation
+  - Fixed Alembic async/sync URL conversion for migrations
+- **Main Application**
+  - Integrated all new middleware (logging, metrics)
+  - Added database initialization in lifespan
+  - Setup structured logging on startup
+  - Removed emojis from startup messages for clean logs
+- **Models**
+  - Fixed SQLAlchemy reserved keyword issue (metadata → extra_data)
+  - All models follow async pattern with proper relationships
+
+### Dependencies Added
+- `argon2-cffi==25.1.0` - Argon2id password hashing
+- `passlib==1.7.4` - Password hashing utilities
+- `python-jose==3.5.0` - JWT token handling
+- `bcrypt==5.0.0` - Bcrypt support for passlib
+- `cryptography==46.0.3` - Cryptographic operations
+- `email-validator==2.3.0` - Email validation with DNS
+- `asyncpg==0.31.0` - Async PostgreSQL driver
+- `psycopg2-binary==2.9.11` - Sync PostgreSQL driver (for Alembic)
+- `greenlet==3.2.4` - Async support for SQLAlchemy
+- `prometheus-client==0.24.1` - Metrics collection
+- `structlog==25.5.0` - Structured logging
+
+### Fixed
+- Database connection using correct user credentials
+- Alembic migration async/sync URL conversion
+- News ingestion service undefined client reference
+- News router duplicate prefix issue
+- SQLAlchemy metadata column reserved keyword
+- Authentication middleware JWT verification
+
+### Security
+- Implemented industry-standard Argon2id password hashing
+- Added timing-attack resistant authentication
+- Created dedicated database user with proper privileges
+- API key hashing in database
+- Secure random token generation
+- Email validation to prevent invalid registrations
 
 ---
 
