@@ -4,14 +4,23 @@ Supports multiple OCR engines:
 - Tesseract: Most popular, supports 100+ languages  
 - EasyOCR: Deep learning-based, high accuracy
 - PaddleOCR: Lightweight, fast, good for mobile
+
+Features Redis caching for improved performance.
 """
 
 import os
 import tempfile
+import hashlib
 from typing import Dict, List
 from datetime import datetime
 import asyncio
 from concurrent.futures import ThreadPoolExecutor
+
+from src.services.cache_service import get_cache_service
+from src.config import get_settings
+
+settings = get_settings()
+cache = get_cache_service()
 
 # Check what's available at import time
 TESSERACT_AVAILABLE = False
@@ -222,6 +231,20 @@ class OCRService:
         """Get list of available OCR engines."""
         return list(self._engines.keys())
     
+    def _generate_cache_key(
+        self,
+        image_path: str,
+        engine: str,
+        language: str,
+        preprocess: bool
+    ) -> str:
+        """Generate cache key for OCR result."""
+        # Hash image content for cache key
+        with open(image_path, 'rb') as f:
+            image_hash = hashlib.md5(f.read()).hexdigest()
+        
+        return f"ocr:{engine}:{language}:{preprocess}:{image_hash}"
+    
     async def extract_text(
         self,
         image_path: str,
@@ -229,9 +252,11 @@ class OCRService:
         language: str = "en",
         preprocess: bool = True
     ) -> Dict:
-        """Extract text from image using specified OCR engine."""
-        start_time = datetime.utcnow()
-        
+        """
+        Extract text from image using specified OCR engine.
+        Results are cached for improved performance.
+        """
+        # Determine engine
         if engine == "auto":
             if "tesseract" in self._engines:
                 engine = "tesseract"
@@ -244,6 +269,17 @@ class OCRService:
         
         if engine not in self._engines:
             raise ValueError(f"OCR engine '{engine}' not available")
+        
+        # Try to get from cache
+        cache_key = self._generate_cache_key(image_path, engine, language, preprocess)
+        cached_result = cache.get(cache_key)
+        
+        if cached_result is not None:
+            cached_result["from_cache"] = True
+            return cached_result
+        
+        # Not in cache, perform OCR
+        start_time = datetime.utcnow()
         
         engine_class = self._engines[engine]
         
@@ -267,6 +303,12 @@ class OCRService:
         
         result["processing_time_seconds"] = processing_time
         result["timestamp"] = end_time.isoformat()
+        result["from_cache"] = False
+        
+        # Cache the result
+        cache_ttl = settings.cache_ocr_ttl if settings.cache_enabled else None
+        if cache_ttl:
+            cache.set(cache_key, result, ttl=cache_ttl)
         
         return result
     

@@ -1,31 +1,145 @@
-"""Test configuration and fixtures."""
+"""Test configuration and fixtures.
+
+Simplified test setup using httpx AsyncClient with proper async context.
+This approach ensures FastAPI's dependency injection works correctly with async database sessions.
+"""
 
 import pytest
-from fastapi.testclient import TestClient
+import pytest_asyncio
+from httpx import AsyncClient, ASGITransport
+from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker, AsyncSession
+from sqlalchemy.pool import StaticPool
 
 from src.main import app
 from src.config import Settings, get_settings
+from src.database import Base, get_db
+
+
+# Test database configuration
+TEST_DATABASE_URL = "sqlite+aiosqlite:///:memory:"
+
+# Create test engine with in-memory SQLite
+test_engine = create_async_engine(
+    TEST_DATABASE_URL,
+    connect_args={"check_same_thread": False},
+    poolclass=StaticPool,
+    echo=False,
+)
+
+# Create session factory
+TestSessionLocal = async_sessionmaker(
+    bind=test_engine,
+    class_=AsyncSession,
+    expire_on_commit=False,
+    autocommit=False,
+    autoflush=False,
+)
 
 
 def get_test_settings():
-    """Override settings for testing."""
+    """Get test settings override."""
     return Settings(
         environment="testing",
         debug=True,
-        database_url="sqlite+aiosqlite:///:memory:",
+        database_url=TEST_DATABASE_URL,
         redis_url="redis://localhost:6379/1",
+        cache_enabled=True,
+        secret_key="test-secret-key-for-jwt-tokens-in-testing-environment-only",
     )
 
 
-@pytest.fixture
-def test_app():
-    """Create test app with overridden settings."""
+async def override_get_db():
+    """Override database dependency with test database session.
+    
+    This is a generator function that yields a database session.
+    FastAPI's dependency injection will handle calling this generator.
+    """
+    session = TestSessionLocal()
+    try:
+        yield session
+    finally:
+        await session.close()
+
+
+@pytest.fixture(scope="function")
+def anyio_backend():
+    """Use asyncio backend for anyio."""
+    return "asyncio"
+
+
+@pytest_asyncio.fixture(scope="function", autouse=True)
+async def setup_test_db():
+    """Set up and tear down test database for each test."""
+    # Create all tables
+    async with test_engine.begin() as conn:
+        await conn.run_sync(Base.metadata.drop_all)
+        await conn.run_sync(Base.metadata.create_all)
+    
+    yield
+    
+    # Drop all tables after test
+    async with test_engine.begin() as conn:
+        await conn.run_sync(Base.metadata.drop_all)
+
+
+@pytest_asyncio.fixture(scope="function")
+async def client():
+    """Create async HTTP client for testing.
+    
+    This fixture:
+    - Overrides app settings to use test configuration
+    - Overrides database dependency to use test database
+    - Creates an async HTTP client using httpx
+    - Cleans up dependencies after test
+    """
+    # Override dependencies
     app.dependency_overrides[get_settings] = get_test_settings
-    yield app
+    app.dependency_overrides[get_db] = override_get_db
+    
+    # Create async client
+    async with AsyncClient(
+        transport=ASGITransport(app=app),
+        base_url="http://testserver",
+        follow_redirects=True,
+    ) as ac:
+        yield ac
+    
+    # Clean up
     app.dependency_overrides.clear()
 
 
-@pytest.fixture
-def client(test_app):
-    """Create test client."""
-    return TestClient(test_app)
+@pytest_asyncio.fixture(scope="function")
+async def authenticated_client(client):
+    """Create an authenticated client with a registered user and token.
+    
+    Returns:
+        tuple: (client, token, user_data)
+    """
+    # Register a test user
+    user_data = {
+        "email": "testuser@example.com",
+        "password": "TestPass123"
+    }
+    
+    response = await client.post("/api/v1/auth/register", json=user_data)
+    assert response.status_code == 201
+    
+    # Login to get token
+    response = await client.post("/api/v1/auth/login", json=user_data)
+    assert response.status_code == 200
+    token_data = response.json()
+    
+    return client, token_data["access_token"], user_data
+
+
+@pytest_asyncio.fixture(scope="function")
+async def test_db_session():
+    """Get a database session for direct database operations in tests.
+    
+    Use this fixture when you need to directly access the database in tests.
+    """
+    session = TestSessionLocal()
+    try:
+        yield session
+    finally:
+        await session.close()

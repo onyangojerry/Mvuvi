@@ -60,3 +60,5 @@ ruff==0.1.13
 mypy==1.8.0
 pre-commit==3.6.0
 aiosqlite==0.22.1
+redis==5.2.1
+hiredis==3.0.0

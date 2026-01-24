@@ -31,6 +31,13 @@ class Settings(BaseSettings):
 
     # Redis
     redis_url: str = Field(default="redis://localhost:6379/0")
+    redis_max_connections: int = Field(default=50)
+    
+    # Cache TTL Settings (in seconds)
+    cache_ocr_ttl: int = Field(default=3600)  # 1 hour
+    cache_articles_ttl: int = Field(default=300)  # 5 minutes
+    cache_preferences_ttl: int = Field(default=900)  # 15 minutes
+    cache_enabled: bool = Field(default=True)
 
     # Rate Limiting
     rate_limit_free_tier: int = Field(default=100)

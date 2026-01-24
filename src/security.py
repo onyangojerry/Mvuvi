@@ -311,3 +311,299 @@ def log_security_event(
 # Singleton instances
 security_validator = SecurityValidator()
 api_key_auth = APIKeyAuth()
+
+
+# Additional utility functions for test compatibility and extended functionality
+
+def sanitize_input(text: Optional[str], max_length: int = 1000) -> str:
+    """
+    Sanitize general text input.
+    
+    Enhanced sanitization that removes XSS, command injection, and other attacks.
+    
+    Args:
+        text: Input text to sanitize
+        max_length: Maximum allowed length
+        
+    Returns:
+        Sanitized text string
+    """
+    if text is None:
+        return ""
+    
+    text = str(text)
+    
+    # Normalize Unicode to prevent fullwidth character attacks
+    import unicodedata
+    text = unicodedata.normalize('NFKC', text)
+    
+    # Use the existing sanitize_text_input as a base
+    text = security_validator.sanitize_text_input(text, max_length)
+    
+    # Additional XSS protection - remove dangerous attributes
+    dangerous_attributes = ['onerror', 'onload', 'onclick', 'onmouseover', 'onfocus']
+    for attr in dangerous_attributes:
+        # Remove the attribute and its value
+        import re
+        text = re.sub(rf'{attr}\s*=\s*["\']?[^"\'>]*["\']?', '', text, flags=re.IGNORECASE)
+    
+    # Command injection protection - remove shell metacharacters
+    dangerous_chars = [';', '|', '&', '$', '`', '\n', '\r']
+    for char in dangerous_chars:
+        text = text.replace(char, '')
+    
+    return text
+
+
+def sanitize_filename(filename: str) -> str:
+    """
+    Sanitize filename to prevent path traversal.
+    
+    Wrapper around SecurityValidator.sanitize_filename for convenience.
+    
+    Args:
+        filename: Original filename
+        
+    Returns:
+        Sanitized filename
+    """
+    return security_validator.sanitize_filename(filename)
+
+
+def sanitize_sql_input(text: str) -> str:
+    """
+    Sanitize input to prevent SQL injection.
+    
+    Note: This is a defense-in-depth measure. The primary defense
+    against SQL injection is using parameterized queries (SQLAlchemy ORM).
+    
+    Args:
+        text: Input text that might be used in SQL context
+        
+    Returns:
+        Sanitized text with dangerous SQL patterns removed/escaped
+    """
+    if not text:
+        return ""
+    
+    # Remove or escape SQL comment sequences
+    text = text.replace("--", "")
+    text = text.replace("/*", "").replace("*/", "")
+    
+    # Remove SQL keywords in dangerous contexts
+    dangerous_patterns = [
+        r'\bUNION\b',
+        r'\bSELECT\b',
+        r'\bINSERT\b',
+        r'\bUPDATE\b',
+        r'\bDELETE\b',
+        r'\bDROP\b',
+        r'\bEXEC\b',
+        r'\bEXECUTE\b',
+        r'\bWAITFOR\b',
+        r'\bSLEEP\b',
+    ]
+    
+    for pattern in dangerous_patterns:
+        text = re.sub(pattern, '', text, flags=re.IGNORECASE)
+    
+    # Escape single quotes (parameterized queries handle this better)
+    text = text.replace("'", "''")
+    
+    return text
+
+
+def validate_file_type(filename: str, allowed_types: list) -> bool:
+    """
+    Validate file type based on extension.
+    
+    Args:
+        filename: Name of file to validate
+        allowed_types: List of allowed extensions (without dot)
+        
+    Returns:
+        True if file type is allowed, False otherwise
+    """
+    if not filename or not allowed_types:
+        return False
+    
+    # Convert to lowercase for case-insensitive comparison
+    filename_lower = filename.lower()
+    
+    # Check for double extensions (e.g., file.pdf.exe)
+    parts = filename_lower.split('.')
+    if len(parts) > 2:
+        # More than one extension - potential attack
+        return False
+    
+    # Get file extension
+    if '.' not in filename_lower:
+        return False
+    
+    extension = filename_lower.rsplit('.', 1)[-1]
+    
+    # Check if extension is in allowed list
+    return extension in [ext.lower() for ext in allowed_types]
+
+
+def check_file_size(file_size: int, max_size: int = 10 * 1024 * 1024) -> bool:
+    """
+    Check if file size is within allowed limit.
+    
+    Args:
+        file_size: Size of file in bytes
+        max_size: Maximum allowed size in bytes (default: 10MB)
+        
+    Returns:
+        True if file size is valid, False otherwise
+    """
+    if file_size <= 0:
+        return False
+    
+    if file_size > max_size:
+        return False
+    
+    return True
+
+
+def validate_file_upload(
+    filename: str,
+    file_size: int,
+    allowed_types: list = None,
+    max_size: int = 10 * 1024 * 1024
+) -> Dict[str, Any]:
+    """
+    Comprehensive file upload validation.
+    
+    Args:
+        filename: Name of uploaded file
+        file_size: Size of file in bytes
+        allowed_types: List of allowed file extensions
+        max_size: Maximum allowed file size in bytes
+        
+    Returns:
+        Dictionary with validation result:
+        {
+            "valid": bool,
+            "error": Optional[str],
+            "sanitized_filename": str
+        }
+    """
+    if allowed_types is None:
+        allowed_types = ["jpg", "jpeg", "png", "pdf", "txt"]
+    
+    # Validate file type
+    if not validate_file_type(filename, allowed_types):
+        return {
+            "valid": False,
+            "error": f"File type not allowed. Allowed types: {', '.join(allowed_types)}",
+            "sanitized_filename": None
+        }
+    
+    # Validate file size
+    if not check_file_size(file_size, max_size):
+        return {
+            "valid": False,
+            "error": f"File size invalid. Maximum size: {max_size / 1024 / 1024}MB",
+            "sanitized_filename": None
+        }
+    
+    # Sanitize filename
+    safe_filename = sanitize_filename(filename)
+    
+    return {
+        "valid": True,
+        "error": None,
+        "sanitized_filename": safe_filename
+    }
+
+
+def prevent_path_traversal(path: str) -> str:
+    """
+    Prevent path traversal attacks in file paths.
+    
+    Args:
+        path: Input path string
+        
+    Returns:
+        Sanitized path with traversal sequences removed
+    """
+    if not path:
+        return ""
+    
+    # Remove URL encoding
+    import urllib.parse
+    path = urllib.parse.unquote(path)
+    
+    # Remove parent directory references
+    path = path.replace("..", "")
+    path = path.replace("./", "")
+    
+    # Remove absolute path indicators
+    path = path.lstrip("/")
+    path = re.sub(r'^[a-zA-Z]:\\', '', path)  # Windows absolute paths
+    
+    # Remove any remaining dangerous patterns
+    path = path.replace("\\", "/")  # Normalize separators
+    
+    # Take only the filename component
+    path = path.split("/")[-1]
+    
+    return path
+
+
+def validate_url(
+    url: str,
+    allowed_schemes: list = None,
+    check_open_redirect: bool = False
+) -> bool:
+    """
+    Validate URL for security.
+    
+    Args:
+        url: URL string to validate
+        allowed_schemes: List of allowed URL schemes (default: ['http', 'https'])
+        check_open_redirect: Whether to check for open redirect patterns
+        
+    Returns:
+        True if URL is valid and safe, False otherwise
+    """
+    if allowed_schemes is None:
+        allowed_schemes = ['http', 'https']
+    
+    if not url:
+        return False
+    
+    # Check for dangerous protocols
+    dangerous_schemes = ['javascript', 'data', 'file', 'vbscript']
+    url_lower = url.lower()
+    
+    for scheme in dangerous_schemes:
+        if url_lower.startswith(f"{scheme}:"):
+            return False
+    
+    # Parse URL
+    from urllib.parse import urlparse
+    
+    try:
+        parsed = urlparse(url)
+    except Exception:
+        return False
+    
+    # Validate scheme
+    if parsed.scheme not in allowed_schemes:
+        return False
+    
+    # Check for open redirect patterns (multiple @ signs, suspicious userinfo)
+    if check_open_redirect:
+        if url.count('@') > 1:
+            return False
+        if parsed.username or parsed.password:
+            # URLs with credentials might be suspicious
+            return False
+    
+    # Validate hostname exists
+    if not parsed.netloc:
+        return False
+    
+    return True

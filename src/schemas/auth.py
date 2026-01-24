@@ -5,6 +5,7 @@ Authentication schemas for request/response validation.
 from pydantic import BaseModel, EmailStr, Field, validator
 from typing import Optional
 from datetime import datetime
+from uuid import UUID
 
 
 class UserRegister(BaseModel):
@@ -61,15 +62,14 @@ class TokenRefresh(BaseModel):
 class UserResponse(BaseModel):
     """User response."""
     
-    id: str = Field(..., description="User ID")
+    id: UUID = Field(..., description="User ID")
     email: str = Field(..., description="User email")
     role: str = Field(..., description="User role")
     is_active: bool = Field(..., description="Account active status")
     is_verified: bool = Field(..., description="Email verification status")
     created_at: datetime = Field(..., description="Account creation timestamp")
     
-    class Config:
-        from_attributes = True
+    model_config = {"from_attributes": True}
 
 
 class PasswordChange(BaseModel):

@@ -9,10 +9,103 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### In Progress
+- File storage implementation (local filesystem + S3-compatible)
+- Queue processing for OCR jobs
+- Async test conversion for remaining test suites
+
 ### Planned
 - Neural network OCR error correction
 - WebSocket real-time feed streaming
 - Frontend React application
+
+---
+
+## [1.2.1] - 2026-01-24
+
+### Added - Security Implementation Complete ✅
+
+#### Comprehensive Security Module (100% Test Coverage)
+- **Input Sanitization** (11 tests passing)
+  - XSS prevention (script tags, event handlers, javascript: protocol)
+  - Command injection protection (shell metacharacters)
+  - Unicode normalization (fullwidth character attacks)
+  - SQL injection patterns detection
+  - Null byte injection prevention
+- **File Upload Validation** (11 tests passing)
+  - Type validation with whitelist
+  - Double extension detection (file.pdf.exe)
+  - Size limit enforcement (configurable, default 10MB)
+  - Case-insensitive validation
+- **Path Traversal Prevention** (8 tests passing)
+  - Parent directory traversal (../)
+  - Absolute path detection (Unix & Windows)
+  - URL-encoded traversal attempts
+  - Filename sanitization with Unicode support
+- **URL Validation** (10 tests passing)
+  - Protocol whitelist (http/https only)
+  - Dangerous protocol blocking (javascript:, data:, file:)
+  - Open redirect pattern detection
+  - Malformed URL rejection
+- **SQL Injection Prevention** (5 tests passing)
+  - Basic injection pattern removal
+  - UNION attack detection
+  - Comment injection prevention
+  - Time-based injection detection
+  - Hex encoding attempts
+- **Security Headers & Rate Limiting** (3 tests passing)
+  - CSP, X-Frame-Options, X-Content-Type-Options
+  - CORS configuration
+  - Tiered rate limits (100/1000/10000 per hour)
+- **Data Validation Helpers** (3 tests passing)
+  - Email format validation
+  - UUID format validation
+  - Password strength requirements
+
+#### Test Infrastructure Improvements
+- Fixed async/await patterns in test fixtures
+- Rewrote `tests/conftest.py` with proper AsyncClient support
+- In-memory SQLite database with automatic setup/teardown
+- Dependency override pattern for database sessions
+- Authenticated client fixture with JWT tokens
+- Authentication tests improved from 10/27 to 20/27 passing
+
+#### Documentation Updates
+- Created `docs/TEST_FIX_SUMMARY.md` - Test infrastructure fix details
+- Created `docs/PRODUCTION_STATUS_UPDATE.md` - Current status and next steps
+- Updated all production readiness documentation
+
+#### Security Functions Implemented
+```python
+# New security functions in src/security.py
+sanitize_input()           # Enhanced XSS & command injection protection
+sanitize_filename()        # Path traversal prevention
+sanitize_sql_input()       # SQL injection defense-in-depth
+validate_file_type()       # Extension validation with double-extension check
+check_file_size()          # Size validation
+validate_file_upload()     # Comprehensive upload validation
+prevent_path_traversal()   # Path safety with URL decoding
+validate_url()             # URL protocol & pattern validation
+```
+
+### Fixed
+- Async/sync mismatch in test fixtures causing 42 test failures
+- UUID serialization error in authentication responses
+- Duplicate fixture definitions in test_authentication.py
+- Test isolation issues with password hashing
+
+### Dependencies Added
+- `slowapi` - For rate limiting functionality
+
+### Test Results
+```
+Total Tests: 164
+Passing: 100 (61%)
+Security: 51/51 (100%) ✅
+Cache: 25/25 (100%) ✅
+Authentication: 20/27 (74%)
+Other suites: Need async conversion
+```
 
 ---
 
