@@ -2,12 +2,13 @@
 
 from fastapi import APIRouter
 
-from src.api.v1 import ingest, feed, health, ocr, news
+from src.api.v1 import ingest, feed, health, ocr, news, auth
 
 router = APIRouter()
 
 # Include sub-routers
 router.include_router(health.router, prefix="/health", tags=["Health"])
+router.include_router(auth.router, prefix="/auth", tags=["Authentication"])
 router.include_router(ocr.router, prefix="/ocr", tags=["OCR"])
 router.include_router(ingest.router, prefix="/ingest", tags=["Ingestion"])
 router.include_router(feed.router, prefix="/feed", tags=["News Feed"])
