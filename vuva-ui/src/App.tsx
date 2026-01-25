@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
+import { WebSocketClient } from "./utils/websocketClient";
 import * as THREE from "three";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { Stars, Html, OrbitControls } from "@react-three/drei";
@@ -160,39 +161,47 @@ const useUniverse = create((set, get) => ({
 }));
 
 // ---------------------------
-// 3) Mock real-time stream
+// 3) WebSocket real-time stream
 // ---------------------------
-function startMockStream(pushNews) {
-  const verbs = ["signals", "sparks", "raises", "unveils", "accelerates", "tightens", "debates", "questions"];
-  const nouns = ["policy", "regulation", "strategy", "framework", "report", "leak", "breakthrough", "proposal"];
-  const places = ["Washington", "Brussels", "Nairobi", "Seoul", "Brasília", "Tokyo", "New Delhi", "San Francisco"];
+function useNewsWebSocket(pushNews: (item: any) => void) {
+  const wsRef = useRef<WebSocketClient | null>(null);
+  const [status, setStatus] = useState<'connecting' | 'open' | 'closed' | 'error'>('connecting');
+  const [error, setError] = useState<string | null>(null);
 
-  const interval = setInterval(() => {
-    const g = TAXONOMY[Math.floor(Math.random() * TAXONOMY.length)];
-    const s = g.systems[Math.floor(Math.random() * g.systems.length)];
-    const p = s.planets[Math.floor(Math.random() * s.planets.length)];
-
-    const title = `${p}: ${places[Math.floor(Math.random() * places.length)]} ${verbs[Math.floor(Math.random() * verbs.length)]} new ${nouns[Math.floor(Math.random() * nouns.length)]}`;
-    const now = new Date();
-    const item = {
-      id: cryptoRandomId(),
-      ts: now.toISOString(),
-      galaxyId: g.id,
-      systemId: s.id,
-      planet: p,
-      title,
-      source: "Open Stream (mock)",
-      url: "#",
-      summary: `Live update in ${g.name} → ${s.name} → ${p}. Real-time news streaming from the cosmic feed.`,
+  useEffect(() => {
+    // Optionally, get token from auth context or localStorage
+    const token = localStorage.getItem('auth_token') || undefined;
+    const wsUrl = `${window.location.protocol === 'https:' ? 'wss' : 'ws'}://${window.location.hostname}:8000/api/v1/feed/stream`;
+    wsRef.current = new WebSocketClient({
+      url: wsUrl,
+      token,
+      onMessage: (msg) => {
+        if (msg.type === 'news' && msg.article) {
+          pushNews(msg.article);
+        }
+      },
+      onOpen: () => {
+        setStatus('open');
+        setError(null);
+      },
+      onError: (e) => {
+        setStatus('error');
+        setError('WebSocket error');
+      },
+      onClose: (ev) => {
+        setStatus('closed');
+        if (!ev.wasClean) setError('WebSocket closed unexpectedly');
+      },
+      reconnect: true,
+      reconnectIntervalMs: 3000,
+      maxReconnectAttempts: 10,
+    });
+    return () => {
+      wsRef.current?.close();
     };
-    pushNews(item);
-  }, 1200);
+  }, [pushNews]);
 
-  return () => clearInterval(interval);
-}
-
-function cryptoRandomId() {
-  return `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+  return { status, error };
 }
 
 // ---------------------------
@@ -675,12 +684,8 @@ function smallValue() {
 // ---------------------------
 // 8) Main component
 // ---------------------------
-export default function SpaceNewsUniverse() {
   const pushNews = useUniverse((s) => s.pushNews);
-
-  useEffect(() => {
-    return startMockStream(pushNews);
-  }, [pushNews]);
+  const { status, error } = useNewsWebSocket(pushNews);
 
   return (
     <div style={{ width: "100vw", height: "100vh", background: "#050712" }}>
@@ -707,6 +712,11 @@ export default function SpaceNewsUniverse() {
       </Canvas>
 
       <Hud />
+      <div style={{position:'absolute',top:10,right:10,zIndex:1000}}>
+        {status === 'connecting' && <span style={{color:'#ff0'}}>Connecting to live news…</span>}
+        {status === 'error' && <span style={{color:'#f00'}}>WebSocket error: {error}</span>}
+        {status === 'closed' && <span style={{color:'#f00'}}>WebSocket disconnected</span>}
+      </div>
     </div>
   );
 }
