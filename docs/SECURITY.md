@@ -64,7 +64,7 @@ hash_len = 32        # 32-byte output
 - Used only for token refresh
 - Single-use recommended (implement token rotation)
 
-**Security Features**:
+# Security Documentation
 - Secure random token generation
 - JWT ID (jti) for potential revocation
 - Automatic expiry enforcement
@@ -78,7 +78,6 @@ hash_len = 32        # 32-byte output
 - SHA-256 hashed in database
 - Never stored in plain text
 - Can be revoked at any time
-- Last used timestamp tracking
 
 **Use Cases**:
 - Server-to-server communication
@@ -87,20 +86,17 @@ hash_len = 32        # 32-byte output
 
 ---
 
-## 2. Input Sanitization
+## Status
 
 All user inputs are sanitized to prevent injection attacks.
 
-### XSS Prevention
-
-**Protected Against**:
 - Script tag injection (`<script>alert(1)</script>`)
-- Event handler injection (`<img onerror="alert(1)">`)
+## Security Features
 - JavaScript protocol (`javascript:alert(1)`)
 - Unicode bypass attacks (fullwidth characters)
 - Null byte injection
 - HTML entity encoding bypass
-
+## Security Testing
 **Implementation**:
 ```python
 from src.security import sanitize_input
