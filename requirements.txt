@@ -10,7 +10,7 @@ asyncpg==0.29.0
 alembic==1.13.1
 
 # Redis for caching and rate limiting
-redis==5.0.1
+redis==5.2.1
 aioredis==2.0.1
 
 # HTTP Client
@@ -20,6 +20,7 @@ aiohttp==3.9.1
 # Security
 python-jose[cryptography]==3.3.0
 passlib[bcrypt]==1.7.4
+argon2-cffi==23.1.0
 python-multipart==0.0.6
 
 # OCR and Image Processing
@@ -29,7 +30,7 @@ pdf2image==1.17.0
 opencv-python-headless==4.9.0.80
 easyocr==1.7.1
 paddleocr==2.7.3
-paddlepaddle==2.6.0
+paddlepaddle==2.6.2
 
 # ML/AI Libraries (lightweight)
 numpy==1.26.3
@@ -39,6 +40,11 @@ onnxruntime==1.16.3
 # Data Validation
 email-validator==2.1.0
 
+# RSS and News Processing
+feedparser==6.0.10
+newspaper3k==0.2.8
+lxml_html_clean==0.4.3
+
 # Utilities
 python-dotenv==1.0.0
 python-slugify==8.0.1
@@ -47,6 +53,7 @@ tenacity==8.2.3
 # Monitoring and Logging
 prometheus-client==0.19.0
 structlog==24.1.0
+slowapi==0.1.9
 
 # Testing
 pytest==7.4.4

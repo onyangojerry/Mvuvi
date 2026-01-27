@@ -7,7 +7,6 @@ from typing import Optional
 import uuid
 
 from sqlalchemy import Column, String, Boolean, Integer, DateTime, Text, ForeignKey, Index
-from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship, declarative_base
 from sqlalchemy.sql import func
 
@@ -19,7 +18,7 @@ class User(Base):
     
     __tablename__ = "users"
     
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
     email = Column(String(255), unique=True, nullable=False, index=True)
     password_hash = Column(String(255), nullable=False)
     role = Column(String(50), nullable=False, default="free")  # free, basic, premium, admin
@@ -50,7 +49,7 @@ class Source(Base):
     
     __tablename__ = "sources"
     
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
     name = Column(String(255), nullable=False)
     url = Column(Text, nullable=False)
     category = Column(String(100), nullable=False)  # technology, world, business, science, general
@@ -88,8 +87,8 @@ class Article(Base):
     
     __tablename__ = "articles"
     
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    source_id = Column(UUID(as_uuid=True), ForeignKey("sources.id"), nullable=False)
+    id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    source_id = Column(String(36), ForeignKey("sources.id"), nullable=False)
     
     # Content
     title = Column(Text, nullable=False)
@@ -132,8 +131,8 @@ class APIKey(Base):
     
     __tablename__ = "api_keys"
     
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    user_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=False)
+    id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    user_id = Column(String(36), ForeignKey("users.id"), nullable=False)
     
     # Key details
     key_hash = Column(String(255), unique=True, nullable=False, index=True)
@@ -174,8 +173,8 @@ class UserPreference(Base):
     
     __tablename__ = "user_preferences"
     
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    user_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), unique=True, nullable=False)
+    id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    user_id = Column(String(36), ForeignKey("users.id"), unique=True, nullable=False)
     
     # Preferences
     favorite_categories = Column(Text, nullable=True)  # JSON array
@@ -206,7 +205,7 @@ class AuditLog(Base):
     
     __tablename__ = "audit_logs"
     
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
     
     # Event details
     event_type = Column(String(100), nullable=False)  # login, logout, api_call, etc.
@@ -214,8 +213,8 @@ class AuditLog(Base):
     resource = Column(String(255), nullable=True)
     
     # User context
-    user_id = Column(UUID(as_uuid=True), nullable=True)
-    api_key_id = Column(UUID(as_uuid=True), nullable=True)
+    user_id = Column(String(36), nullable=True)
+    api_key_id = Column(String(36), nullable=True)
     
     # Request context
     ip_address = Column(String(45), nullable=True)
@@ -248,8 +247,8 @@ class OCRJob(Base):
     
     __tablename__ = "ocr_jobs"
     
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    user_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=True)
+    id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    user_id = Column(String(36), ForeignKey("users.id"), nullable=True)
     
     # Job details
     filename = Column(String(255), nullable=False)
