@@ -3,11 +3,21 @@
 from datetime import datetime
 from typing import Optional
 from uuid import uuid4
+import json
 
-from fastapi import APIRouter, File, Form, HTTPException, UploadFile, status
+from fastapi import APIRouter, File, Form, HTTPException, UploadFile, status, Depends
 from pydantic import BaseModel, Field
 
 from src.config import get_settings
+from src.services.storage_service import get_storage
+from src.database import get_db
+from src.models import OCRJob
+from src.services import pubsub
+from src.worker.celery_app import celery_app
+from sqlalchemy.ext.asyncio import AsyncSession
+from fastapi import Depends
+from fastapi import WebSocket
+from src.ws.redis_ws import ws_manager
 
 settings = get_settings()
 router = APIRouter()
@@ -33,6 +43,7 @@ async def upload_newspaper(
     image: UploadFile = File(..., description="Newspaper image (PNG, JPG, or PDF)"),
     language: Optional[str] = Form(default="en", description="Language code (e.g., 'en', 'es', 'fr')"),
     source: Optional[str] = Form(default=None, description="Newspaper source name"),
+    db: AsyncSession = Depends(get_db),
 ):
     """
     Upload a newspaper image for OCR processing and text extraction.
@@ -81,22 +92,67 @@ async def upload_newspaper(
     # Generate unique ID for this ingestion
     ingestion_id = str(uuid4())
     
-    # TODO: Save file to storage
-    # TODO: Queue OCR processing job
-    # TODO: Store metadata in database
-    
+    # Save file to storage (local by default)
+    storage = get_storage()
+    # rewind and save file
+    try:
+        await image.seek(0)
+    except Exception:
+        pass
+    saved = await storage.save(image)
+
+    # Persist an OCR job record
+    job = OCRJob(
+        filename=saved.get("filename"),
+        engine=settings.ocr_engine,
+        status="pending",
+        file_size_kb=int(saved.get("size_bytes", 0) / 1024),
+    )
+    db.add(job)
+    await db.flush()
+    job_id = job.id
+
+    # Prepare notification payload
+    payload = {
+        "event": "ocr_job_created",
+        "job_id": job_id,
+        "ingestion_id": ingestion_id,
+        "filename": saved.get("filename"),
+        "storage_path": saved.get("storage_path"),
+        "created_at": datetime.utcnow().isoformat(),
+    }
+
+    # Publish notification (async, best-effort)
+    try:
+        await pubsub.publish_event(settings.redis_notifications_channel, payload)
+    except Exception:
+        pass
+
+    # Enqueue OCR Celery task (fire-and-forget)
+    try:
+        celery_app.send_task(
+            "src.tasks.ocr.process_ocr",
+            args=[saved.get("storage_path"), ingestion_id, job_id, language],
+            kwargs={},
+        )
+    except Exception:
+        # If enqueue fails, we still return accepted but mark job as failed asynchronously
+        pass
+
     return IngestionResponse(
         status="accepted",
         data={
             "id": ingestion_id,
             "type": "newspaper-upload",
             "attributes": {
-                "filename": image.filename,
-                "content_type": image.content_type,
-                "file_size_bytes": file_size,
+                "filename": saved.get("filename"),
+                "content_type": saved.get("content_type"),
+                "file_size_bytes": saved.get("size_bytes"),
                 "language": language,
                 "source": source,
                 "processing_status": "queued",
+                "storage_path": saved.get("storage_path"),
+                "job_id": job_id,
             },
         },
         meta={
@@ -131,6 +187,21 @@ async def get_ingestion_status(ingestion_id: str):
             "created_at": datetime.utcnow().isoformat(),
         },
     )
+
+
+
+@router.websocket("/ws/notifications")
+async def websocket_notifications(ws: WebSocket):
+    """WebSocket endpoint for real-time notifications (OCR job events)."""
+    await ws_manager.connect(ws)
+    try:
+        while True:
+            # Keep connection open; client may send pings
+            data = await ws.receive_text()
+            # Echo back minimal acknowledgement
+            await ws.send_text(json.dumps({"status": "ok", "received": data}))
+    except Exception:
+        await ws_manager.disconnect(ws)
 
 
 @router.get("/history")

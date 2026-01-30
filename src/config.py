@@ -32,6 +32,8 @@ class Settings(BaseSettings):
     # Redis
     redis_url: str = Field(default="redis://localhost:6379/0")
     redis_max_connections: int = Field(default=50)
+    # Redis notification channel name used for real-time events
+    redis_notifications_channel: str = Field(default="vuva:notifications")
     
     # Cache TTL Settings (in seconds)
     cache_ocr_ttl: int = Field(default=3600)  # 1 hour
@@ -73,7 +75,11 @@ class Settings(BaseSettings):
     @property
     def max_upload_size_bytes(self) -> int:
         """Convert MB to bytes for upload size limit."""
-        return self.max_image_size_mb * 1024 * 1024
+        # Some older configs used max_image_size_mb; keep backwards compat if present
+        mb = getattr(self, "max_image_size_mb", None)
+        if mb is None:
+            mb = getattr(self, "max_upload_size", 10)
+        return int(mb) * 1024 * 1024
 
     class Config:
         env_file = ".env"

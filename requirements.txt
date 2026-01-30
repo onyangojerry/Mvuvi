@@ -69,3 +69,6 @@ pre-commit==3.6.0
 aiosqlite==0.22.1
 redis==5.2.1
 hiredis==3.0.0
+
+# Background workers
+celery[redis]==5.3.1

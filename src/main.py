@@ -14,6 +14,8 @@ from src.middleware.logging import LoggingMiddleware
 from src.monitoring.metrics import metrics_middleware, get_metrics
 from src.utils.logger import setup_logging
 from src.database import init_db, check_db_connection
+from src.ws.redis_ws import start_redis_subscriber, ws_manager
+import asyncio
 
 settings = get_settings()
 
@@ -44,10 +46,26 @@ async def lifespan(app: FastAPI) -> AsyncGenerator:
     except Exception as e:
         print(f"[WARN] Database initialization failed: {e}")
         print("  Application will run without database features")
+
+    # Start Redis subscriber for WebSocket broadcasts
+    try:
+        app.state.redis_subscriber_task = asyncio.create_task(
+            start_redis_subscriber(app, settings.redis_url, settings.redis_notifications_channel)
+        )
+        print("[OK] Redis websocket subscriber started")
+    except Exception as e:
+        print(f"[WARN] Redis websocket subscriber failed to start: {e}")
     
     yield
-    
     # Shutdown
+    # Cancel Redis subscriber if running
+    sub_task = getattr(app.state, "redis_subscriber_task", None)
+    if sub_task:
+        sub_task.cancel()
+        try:
+            await sub_task
+        except Exception:
+            pass
     print("Shutting down application")
 
 
