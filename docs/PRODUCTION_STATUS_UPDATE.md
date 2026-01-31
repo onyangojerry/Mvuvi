@@ -1,3 +1,20 @@
+# 2026-01-31: Real-Time OCR News Pipeline Update
+
+## What Was Fixed & Improved
+- Celery worker now always registers the OCR task (`src.tasks.ocr.process_ocr`) by importing the module in `src/worker/celery_app.py`.
+- Feed API (`/api/v1/feed`) now correctly counts and paginates articles from the database.
+- WebSocket endpoint (`/api/v1/feed/stream`) subscribes to Redis and broadcasts new articles in real time to all connected clients.
+- Frontend WebSocket handler (`useNewsStream.ts`) now uses `message.article` for real-time updates.
+- Ingestion endpoint logs and returns detailed tracebacks for easier debugging.
+- Documentation (`docs/ocr_pipeline.md`) updated to reflect the full, productionized pipeline and troubleshooting steps.
+
+## Deployment
+- Rebuild and restart Docker containers after code changes.
+- Ensure Celery worker is started with the correct app and imports.
+- Run `npm run dev` for frontend development.
+
+## References
+- See `docs/ocr_pipeline.md` and `CHANGELOG.md` for full details.
 # Production Readiness Status Update
 
 **Date**: January 24, 2026  

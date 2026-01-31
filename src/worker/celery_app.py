@@ -17,4 +17,8 @@ celery_app.conf.update(
     enable_utc=True,
 )
 
+
+# Ensure all task modules are imported so Celery can discover them
+import src.tasks.ocr
+
 __all__ = ["celery_app"]

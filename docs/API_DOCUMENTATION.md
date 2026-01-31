@@ -1,3 +1,27 @@
+# API & Pipeline Documentation Update (2026-01-31)
+
+## Key Endpoints
+- `/api/v1/ingest/upload`: Accepts user-uploaded images, validates, stores, and enqueues OCR jobs.
+- `/api/v1/feed`: Returns all articles (including OCR uploads) from the database, paginated and filterable.
+- `/api/v1/feed/stream`: WebSocket endpoint for real-time news updates, now bridged to Redis pubsub.
+
+## Pipeline Summary
+- Upload → OCR extraction → NLP categorization/rewriting → DB storage → Redis pubsub → WebSocket broadcast → UI update.
+
+## Real-Time Flow
+- Celery worker publishes `new_article` to Redis after processing.
+- WebSocket endpoint listens to Redis and broadcasts new articles to all clients.
+- Frontend listens for `new_article` and updates the news feed instantly.
+
+## Troubleshooting
+- If uploads do not appear, ensure Celery worker is running and imports `src.tasks.ocr`.
+- If feed API fails, ensure DB migrations are up to date and the count logic uses `len(...scalars().all())`.
+- If real-time updates fail, check Redis connection and WebSocket logs.
+
+## See Also
+- `docs/ocr_pipeline.md` for full pipeline details.
+- `CHANGELOG.md` for all recent changes.
+- `PRODUCTION_STATUS_UPDATE.md` for deployment and status notes.
 # Vuva API Documentation
 
 **Version**: 1.2.1  

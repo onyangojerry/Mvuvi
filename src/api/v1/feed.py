@@ -13,6 +13,12 @@ import asyncio
 import logging
 from pydantic import BaseModel, Field
 from src.services.news_ingestion import NewsDataManager
+from src.models import Article, Source
+from sqlalchemy.future import select
+from sqlalchemy.orm import joinedload
+from sqlalchemy.ext.asyncio import AsyncSession
+from fastapi import Depends
+from src.database import get_db
 
 router = APIRouter()
 
@@ -63,6 +69,7 @@ class FeedResponse(BaseModel):
     meta: dict = Field(description="Response metadata")
 
 
+
 @router.get("", response_model=FeedResponse)
 async def get_news_feed(
     page: int = Query(default=1, ge=1, description="Page number"),
@@ -70,50 +77,57 @@ async def get_news_feed(
     category: Optional[str] = Query(default=None, description="Filter by category"),
     language: Optional[str] = Query(default="en", description="Language preference"),
     sort: Optional[str] = Query(default="-published_at", description="Sort order (prefix with - for desc)"),
+    db: AsyncSession = Depends(get_db),
 ):
     """
-    Get personalized news feed using novel randomization algorithms.
-    
-    This endpoint returns a curated feed of news articles from various sources:
-    - Open source news APIs
-    - RSS feeds from trusted sources
-    - User-uploaded newspapers (processed via OCR)
-    
-    The feed uses specialized randomization algorithms to provide:
-    - Content diversity
-    - Personalized recommendations
-    - Fresh and relevant news
-    - Serendipitous discovery
-    
-    **Filters**:
-    - `category`: politics, technology, sports, business, etc.
-    - `language`: ISO language code
-    
-    **Sorting**:
-    - `published_at`: Publication date
-    - `relevance`: Relevance score
-    - `popularity`: Engagement metrics
+    Get news feed from the database, including OCR uploads and RSS/API articles.
+    Supports pagination and category filtering.
     """
-    # TODO: Implement randomization algorithm
-    # TODO: Query database for articles
-    # TODO: Apply user preferences
-    # TODO: Calculate diversity scores
-    
-    # Placeholder response
+    query = select(Article).options(joinedload(Article.source))
+    if category and category.lower() != "all":
+        query = query.where(Article.source.has(category=category.lower()))
+    # Optionally filter by language
+    # query = query.where(Article.source.has(language=language))
+    # Sorting
+    if sort == "-published_at":
+        query = query.order_by(Article.published_at.desc().nullslast())
+    else:
+        query = query.order_by(Article.published_at.asc().nullslast())
+    # Pagination
+    offset = (page - 1) * page_size
+    total_items = len((await db.execute(select(Article))).scalars().all())
+    result = await db.execute(query.offset(offset).limit(page_size))
+    articles = result.scalars().all()
+    # Format for API
+    data = [
+        NewsArticle(
+            id=a.id,
+            title=a.title,
+            content=a.content,
+            summary=a.summary,
+            source=a.source.name if a.source else "Unknown",
+            category=a.source.category if a.source else None,
+            published_at=a.published_at.isoformat() if a.published_at else "",
+            extracted_at=a.created_at.isoformat() if a.created_at else None,
+            confidence_score=None,  # Optionally add if stored
+        )
+        for a in articles
+    ]
+    total_pages = (total_items + page_size - 1) // page_size if page_size else 1
     return FeedResponse(
         status="success",
-        data=[],
+        data=data,
         pagination={
             "page": page,
             "page_size": page_size,
-            "total_pages": 0,
-            "total_items": 0,
-            "has_next": False,
-            "has_previous": False,
+            "total_pages": total_pages,
+            "total_items": total_items,
+            "has_next": page < total_pages,
+            "has_previous": page > 1,
         },
         meta={
             "timestamp": datetime.utcnow().isoformat(),
-            "algorithm": "weighted-randomization-v1",
+            "algorithm": "db-query",
             "diversity_score": 0.0,
         },
     )
@@ -142,6 +156,8 @@ async def get_article(article_id: str):
 
 
 
+import redis.asyncio as aioredis
+
 @router.websocket("/stream")
 async def websocket_feed_stream(
     websocket: WebSocket,
@@ -167,20 +183,44 @@ async def websocket_feed_stream(
 
         # Fetch news articles (personalized or general)
         if user:
-            # TODO: Use user preferences for filtering (category, language, etc.)
             articles = await news_manager.fetch_all_news(limit=50)
         else:
             articles = await news_manager.fetch_all_news(limit=50)
-
         # Stream articles one by one (simulate real-time)
         for article in articles:
             await websocket.send_json({"type": "news", "article": article})
-            await asyncio.sleep(2)  # Simulate delay between articles
+            await asyncio.sleep(2)
 
-        # Keep connection alive (heartbeat)
-        while True:
-            await asyncio.sleep(30)
-            await websocket.send_json({"type": "heartbeat"})
+        # Subscribe to Redis for real-time updates
+        redis_url = getattr(get_settings(), "redis_url", "redis://localhost:6379/0")
+        r = aioredis.from_url(redis_url)
+        pubsub = r.pubsub()
+        await pubsub.subscribe(get_settings().redis_notifications_channel)
+
+        async def redis_listener():
+            async for msg in pubsub.listen():
+                if msg["type"] == "message":
+                    try:
+                        payload = json.loads(msg["data"])
+                        if payload.get("event") == "new_article":
+                            await websocket.send_json({"type": "new_article", "article": payload})
+                    except Exception:
+                        pass
+
+        # Run redis listener and heartbeat concurrently
+        async def heartbeat():
+            while True:
+                await asyncio.sleep(30)
+                await websocket.send_json({"type": "heartbeat"})
+
+        listener_task = asyncio.create_task(redis_listener())
+        heartbeat_task = asyncio.create_task(heartbeat())
+        done, pending = await asyncio.wait(
+            [listener_task, heartbeat_task],
+            return_when=asyncio.FIRST_COMPLETED
+        )
+        for task in pending:
+            task.cancel()
     except WebSocketDisconnect:
         manager.disconnect(websocket)
         logger.info(f"WebSocket disconnected: {websocket.client.host}")

@@ -1,3 +1,10 @@
+# 2026-01-31
+- Fix: Celery worker now imports `src.tasks.ocr` to register OCR tasks for user-uploaded images.
+- Fix: Feed API uses correct method to count articles, resolving AttributeError.
+- Feature: WebSocket endpoint subscribes to Redis and broadcasts new articles in real time to all clients.
+- Fix: Frontend WebSocket handler (`useNewsStream.ts`) now uses `message.article` for real-time updates.
+- Docs: Updated `ocr_pipeline.md` with full, up-to-date documentation of the OCR-to-newsfeed pipeline, real-time updates, and troubleshooting.
+- Logging: Ingestion endpoint now logs and returns detailed tracebacks for easier debugging.
 # Vuva Project Changelog
 
 All notable changes to the Vuva Newspaper Ingestion API project will be documented in this file.

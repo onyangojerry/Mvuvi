@@ -8,7 +8,7 @@ export function useNewsStream(onNewArticle: (article: any) => void) {
       try {
         const message = JSON.parse(event.data);
         if (message.type === 'new_article') {
-          onNewArticle(message.data);
+          onNewArticle(message.article);
         }
       } catch (e) {
         // Ignore malformed messages

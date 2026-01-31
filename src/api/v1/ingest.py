@@ -38,6 +38,8 @@ class IngestionStatusResponse(BaseModel):
     data: dict = Field(description="Processing data")
 
 
+import traceback
+
 @router.post("/upload", response_model=IngestionResponse, status_code=status.HTTP_202_ACCEPTED)
 async def upload_newspaper(
     image: UploadFile = File(..., description="Newspaper image (PNG, JPG, or PDF)"),
@@ -59,123 +61,118 @@ async def upload_newspaper(
     **Max size**: 10MB
     **Processing time**: ~3-5 seconds
     """
-    # Validate file type
-    allowed_types = ["image/jpeg", "image/png", "application/pdf"]
-    if image.content_type not in allowed_types:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail={
-                "code": "INVALID_IMAGE_FORMAT",
-                "message": f"Unsupported file type: {image.content_type}",
-                "details": {
-                    "received_format": image.content_type,
-                    "supported_formats": allowed_types,
+    try:
+        # Validate file type
+        allowed_types = ["image/jpeg", "image/png", "application/pdf"]
+        if image.content_type not in allowed_types:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail={
+                    "code": "INVALID_IMAGE_FORMAT",
+                    "message": f"Unsupported file type: {image.content_type}",
+                    "details": {
+                        "received_format": image.content_type,
+                        "supported_formats": allowed_types,
+                    },
+                },
+            )
+        # Validate file size
+        contents = await image.read()
+        file_size = len(contents)
+        if file_size > settings.max_upload_size_bytes:
+            raise HTTPException(
+                status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
+                detail={
+                    "code": "IMAGE_TOO_LARGE",
+                    "message": f"File size exceeds limit of {settings.max_image_size_mb}MB",
+                    "details": {
+                        "file_size_bytes": file_size,
+                        "max_size_bytes": settings.max_upload_size_bytes,
+                    },
+                },
+            )
+        # Generate unique ID for this ingestion
+        ingestion_id = str(uuid4())
+        # Save file to storage (local by default)
+        storage = get_storage()
+        try:
+            await image.seek(0)
+        except Exception:
+            pass
+        saved = await storage.save(image, user_id=user_id)
+        if not saved or not saved.get("filename"):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail={
+                    "code": "UPLOAD_FAILED",
+                    "message": "Failed to save uploaded file.",
+                },
+            )
+        # Persist an OCR job record
+        job = OCRJob(
+            filename=saved.get("filename"),
+            engine=settings.ocr_engine,
+            status="pending",
+            file_size_kb=int(saved.get("size_bytes", 0) / 1024),
+        )
+        db.add(job)
+        await db.flush()
+        job_id = job.id
+        # Prepare notification payload
+        payload = {
+            "event": "ocr_job_created",
+            "job_id": job_id,
+            "ingestion_id": ingestion_id,
+            "filename": saved.get("filename"),
+            "storage_path": saved.get("storage_path"),
+            "created_at": datetime.utcnow().isoformat(),
+        }
+        # Publish notification (async, best-effort)
+        try:
+            await pubsub.publish_event(settings.redis_notifications_channel, payload)
+        except Exception:
+            pass
+        # Enqueue OCR Celery task (fire-and-forget)
+        try:
+            celery_app.send_task(
+                "src.tasks.ocr.process_ocr",
+                args=[saved.get("storage_path"), ingestion_id, job_id, language],
+                kwargs={},
+            )
+        except Exception:
+            pass
+        return IngestionResponse(
+            status="accepted",
+            data={
+                "id": ingestion_id,
+                "type": "newspaper-upload",
+                "attributes": {
+                    "filename": saved.get("filename"),
+                    "content_type": saved.get("content_type"),
+                    "file_size_bytes": saved.get("size_bytes"),
+                    "language": language,
+                    "source": source,
+                    "processing_status": "queued",
+                    "storage_path": saved.get("storage_path"),
+                    "job_id": job_id,
                 },
             },
+            meta={
+                "timestamp": datetime.utcnow().isoformat(),
+                "estimated_processing_time_seconds": 5,
+            },
         )
-    
-    # Validate file size
-    contents = await image.read()
-    file_size = len(contents)
-    if file_size > settings.max_upload_size_bytes:
+    except Exception as e:
+        tb = traceback.format_exc()
+        print(f"[UPLOAD ERROR] {e}\nTraceback:\n{tb}")
         raise HTTPException(
-            status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail={
-                "code": "IMAGE_TOO_LARGE",
-                "message": f"File size exceeds limit of {settings.max_image_size_mb}MB",
-                "details": {
-                    "file_size_bytes": file_size,
-                    "max_size_bytes": settings.max_upload_size_bytes,
-                },
+                "code": "INTERNAL_SERVER_ERROR",
+                "message": f"An unexpected error occurred: {str(e)}",
+                "traceback": tb,
             },
         )
-    
-    # Generate unique ID for this ingestion
-    ingestion_id = str(uuid4())
-    
-    # Save file to storage (local by default)
-    storage = get_storage()
-    # rewind and save file
-    try:
-        await image.seek(0)
-    except Exception:
-        pass
-    saved = await storage.save(image, user_id=user_id)
-    if not saved or not saved.get("filename"):
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail={
-                "code": "UPLOAD_FAILED",
-                "message": "Failed to save uploaded file.",
-            },
-        )
-
-# Admin endpoint to trigger cleanup of old files
-@router.post("/cleanup-uploads")
-async def cleanup_uploads():
-    storage = get_storage()
-    storage.cleanup_old_files()
-    return {"status": "success", "message": "Old files cleaned up."}
-
-    # Persist an OCR job record
-    job = OCRJob(
-        filename=saved.get("filename"),
-        engine=settings.ocr_engine,
-        status="pending",
-        file_size_kb=int(saved.get("size_bytes", 0) / 1024),
-    )
-    db.add(job)
-    await db.flush()
-    job_id = job.id
-
-    # Prepare notification payload
-    payload = {
-        "event": "ocr_job_created",
-        "job_id": job_id,
-        "ingestion_id": ingestion_id,
-        "filename": saved.get("filename"),
-        "storage_path": saved.get("storage_path"),
-        "created_at": datetime.utcnow().isoformat(),
-    }
-
-    # Publish notification (async, best-effort)
-    try:
-        await pubsub.publish_event(settings.redis_notifications_channel, payload)
-    except Exception:
-        pass
-
-    # Enqueue OCR Celery task (fire-and-forget)
-    try:
-        celery_app.send_task(
-            "src.tasks.ocr.process_ocr",
-            args=[saved.get("storage_path"), ingestion_id, job_id, language],
-            kwargs={},
-        )
-    except Exception:
-        # If enqueue fails, we still return accepted but mark job as failed asynchronously
-        pass
-
-    return IngestionResponse(
-        status="accepted",
-        data={
-            "id": ingestion_id,
-            "type": "newspaper-upload",
-            "attributes": {
-                "filename": saved.get("filename"),
-                "content_type": saved.get("content_type"),
-                "file_size_bytes": saved.get("size_bytes"),
-                "language": language,
-                "source": source,
-                "processing_status": "queued",
-                "storage_path": saved.get("storage_path"),
-                "job_id": job_id,
-            },
-        },
-        meta={
-            "timestamp": datetime.utcnow().isoformat(),
-            "estimated_processing_time_seconds": 5,
-        },
-    )
 
 
 @router.get("/status/{ingestion_id}", response_model=IngestionStatusResponse)
