@@ -1,3 +1,6 @@
+from src.middleware.auth import require_auth
+from src.middleware.authorization import get_current_user_role, check_rate_limit
+from src.services.cache_service import cache
 """OCR processing endpoints for text extraction from images."""
 
 import os
@@ -99,7 +102,17 @@ async def extract_text_from_image(
     engine: str = Form(default="auto", description="OCR engine: auto, tesseract, easyocr, paddleocr"),
     language: str = Form(default="en", description="Language code (e.g., 'en', 'es', 'fr')"),
     preprocess: bool = Form(default=True, description="Apply image preprocessing"),
+    user=Depends(require_auth),
+    user_role: str = Depends(get_current_user_role),
 ):
+    usage_key = f"ocr:{getattr(user, 'id', 'anon')}:{datetime.utcnow().date()}"
+    current_usage = cache.get(usage_key) or 0
+    if not check_rate_limit(user_role, int(current_usage)):
+        from fastapi import HTTPException
+        raise HTTPException(status_code=429, detail="Rate limit exceeded for your tier.")
+    cache.set(usage_key, int(current_usage) + 1, ttl=86400)
+    import logging
+    logging.getLogger("vuva.audit").info(f"User {getattr(user, 'id', None)} performed OCR extract", extra={"user_id": getattr(user, 'id', None), "event": "ocr_extract"})
     """
     Extract text from an uploaded image using OCR.
 
@@ -248,7 +261,17 @@ async def extract_text_from_image(
 @router.post("/transcribe-fast", summary="Fast image transcription")
 async def transcribe_fast(
     image: UploadFile = File(..., description="Image file (PNG, JPG)"),
+    user=Depends(require_auth),
+    user_role: str = Depends(get_current_user_role),
 ):
+    usage_key = f"ocr:{getattr(user, 'id', 'anon')}:{datetime.utcnow().date()}"
+    current_usage = cache.get(usage_key) or 0
+    if not check_rate_limit(user_role, int(current_usage)):
+        from fastapi import HTTPException
+        raise HTTPException(status_code=429, detail="Rate limit exceeded for your tier.")
+    cache.set(usage_key, int(current_usage) + 1, ttl=86400)
+    import logging
+    logging.getLogger("vuva.audit").info(f"User {getattr(user, 'id', None)} performed fast OCR transcription", extra={"user_id": getattr(user, 'id', None), "event": "ocr_transcribe_fast"})
     """
     FAST transcription endpoint optimized for immediate results.
     
@@ -368,7 +391,17 @@ async def transcribe_fast(
 @router.post("/extract/compare", response_model=MultiEngineOCRResponse, summary="Compare multiple OCR engines")
 async def compare_ocr_engines(
     image: UploadFile = File(..., description="Image file to process"),
+    user=Depends(require_auth),
+    user_role: str = Depends(get_current_user_role),
 ):
+    usage_key = f"ocr:{getattr(user, 'id', 'anon')}:{datetime.utcnow().date()}"
+    current_usage = cache.get(usage_key) or 0
+    if not check_rate_limit(user_role, int(current_usage)):
+        from fastapi import HTTPException
+        raise HTTPException(status_code=429, detail="Rate limit exceeded for your tier.")
+    cache.set(usage_key, int(current_usage) + 1, ttl=86400)
+    import logging
+    logging.getLogger("vuva.audit").info(f"User {getattr(user, 'id', None)} compared OCR engines", extra={"user_id": getattr(user, 'id', None), "event": "ocr_compare_engines"})
     """
     Extract text using ALL available OCR engines for comparison.
     
@@ -439,7 +472,17 @@ async def batch_ocr_extract(
     images: List[UploadFile] = File(..., description="Multiple images to process"),
     engine: str = Form(default="auto", description="OCR engine to use"),
     language: str = Form(default="en", description="Language code"),
+    user=Depends(require_auth),
+    user_role: str = Depends(get_current_user_role),
 ):
+    usage_key = f"ocr:{getattr(user, 'id', 'anon')}:{datetime.utcnow().date()}"
+    current_usage = cache.get(usage_key) or 0
+    if not check_rate_limit(user_role, int(current_usage)):
+        from fastapi import HTTPException
+        raise HTTPException(status_code=429, detail="Rate limit exceeded for your tier.")
+    cache.set(usage_key, int(current_usage) + 1, ttl=86400)
+    import logging
+    logging.getLogger("vuva.audit").info(f"User {getattr(user, 'id', None)} performed batch OCR extract", extra={"user_id": getattr(user, 'id', None), "event": "ocr_batch_extract"})
     """
     Process multiple images in batch for OCR text extraction.
     

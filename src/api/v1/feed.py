@@ -6,7 +6,9 @@ from typing import Optional, List
 from fastapi import APIRouter, Query, WebSocket, WebSocketDisconnect, Depends, status
 from fastapi.responses import JSONResponse
 from fastapi.websockets import WebSocketState
-from src.middleware.auth import get_current_user
+from src.middleware.auth import get_current_user, require_auth
+from src.middleware.authorization import require_permission, get_current_user_role, check_rate_limit
+from src.services.cache_service import cache
 from src.database import get_db
 from sqlalchemy.ext.asyncio import AsyncSession
 import asyncio
@@ -78,11 +80,22 @@ async def get_news_feed(
     language: Optional[str] = Query(default="en", description="Language preference"),
     sort: Optional[str] = Query(default="-published_at", description="Sort order (prefix with - for desc)"),
     db: AsyncSession = Depends(get_db),
+    user=Depends(require_auth),
+    user_role: str = Depends(get_current_user_role),
 ):
+    # Rate limiting
+    usage_key = f"feed:{getattr(user, 'id', 'anon')}:{datetime.utcnow().date()}"
+    current_usage = cache.get(usage_key) or 0
+    if not check_rate_limit(user_role, int(current_usage)):
+        from fastapi import HTTPException
+        raise HTTPException(status_code=429, detail="Rate limit exceeded for your tier.")
+    cache.set(usage_key, int(current_usage) + 1, ttl=86400)
     """
     Get news feed from the database, including OCR uploads and RSS/API articles.
     Supports pagination and category filtering.
     """
+    # Audit log: user accessed feed
+    logging.getLogger("vuva.audit").info(f"User {getattr(user, 'id', None)} accessed news feed", extra={"user_id": getattr(user, 'id', None), "event": "feed_access"})
     query = select(Article).options(joinedload(Article.source))
     if category and category.lower() != "all":
         query = query.where(Article.source.has(category=category.lower()))
@@ -134,14 +147,14 @@ async def get_news_feed(
 
 
 @router.get("/article/{article_id}")
-async def get_article(article_id: str):
+async def get_article(article_id: str, user=Depends(require_auth)):
     """
     Get a specific article by ID.
     
     Returns full article content with metadata.
     """
     # TODO: Query database for article
-    
+    logging.getLogger("vuva.audit").info(f"User {getattr(user, 'id', None)} accessed article {article_id}", extra={"user_id": getattr(user, 'id', None), "event": "article_access", "article_id": article_id})
     return {
         "status": "success",
         "data": {
@@ -270,10 +283,12 @@ async def get_news_sources():
 
 
 @router.post("/preferences")
+@require_permission("write:preferences")
 async def update_preferences(
     categories: Optional[List[str]] = None,
     languages: Optional[List[str]] = None,
     sources: Optional[List[str]] = None,
+    user=Depends(require_auth),
 ):
     """
     Update user feed preferences.
@@ -286,10 +301,9 @@ async def update_preferences(
     The randomization algorithm will use these preferences
     to personalize content while maintaining diversity.
     """
-    # TODO: Implement authentication
     # TODO: Save preferences to database
     # TODO: Update recommendation model
-    
+    logging.getLogger("vuva.audit").info(f"User {getattr(user, 'id', None)} updated preferences", extra={"user_id": getattr(user, 'id', None), "event": "update_preferences"})
     return {
         "status": "success",
         "data": {

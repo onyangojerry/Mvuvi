@@ -171,12 +171,13 @@ async def get_current_user_role(
         async def endpoint(user_role: str = Depends(get_current_user_role)):
             ...
     """
-    # TODO: Implement JWT verification
-    # token = credentials.credentials
-    # user = verify_jwt_token(token)
-    # return user.role
-    
-    return "free"  # Default for now
+    # Implement JWT verification and extract user role
+    from src.services.auth_service import AuthService
+    token = credentials.credentials
+    payload = AuthService.decode_token(token)
+    if payload is None:
+        return "free"
+    return payload.get("role", "free")
 
 
 def check_rate_limit(user_role: str, current_usage: int) -> bool:

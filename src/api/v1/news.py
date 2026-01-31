@@ -19,7 +19,9 @@ from src.schemas.news import (
     NewsSearchResponse
 )
 from src.services.news_ingestion import NewsDataManager
-from src.middleware.authorization import require_permission
+from src.middleware.authorization import require_permission, get_current_user_role, check_rate_limit
+from src.middleware.auth import require_auth
+from src.services.cache_service import cache
 from src.monitoring.metrics import track_api_call
 
 router = APIRouter(tags=["news"])
@@ -90,8 +92,18 @@ async def get_news_by_category(
     category: str,
     limit: int = Query(20, ge=1, le=100, description="Number of articles to return"),
     offset: int = Query(0, ge=0, description="Pagination offset"),
-    db: AsyncSession = Depends(get_db)
+    db: AsyncSession = Depends(get_db),
+    user=Depends(require_auth),
+    user_role: str = Depends(get_current_user_role),
 ):
+    usage_key = f"news:{getattr(user, 'id', 'anon')}:{datetime.utcnow().date()}"
+    current_usage = cache.get(usage_key) or 0
+    if not check_rate_limit(user_role, int(current_usage)):
+        from fastapi import HTTPException
+        raise HTTPException(status_code=429, detail="Rate limit exceeded for your tier.")
+    cache.set(usage_key, int(current_usage) + 1, ttl=86400)
+    import logging
+    logging.getLogger("vuva.audit").info(f"User {getattr(user, 'id', None)} accessed news category {category}", extra={"user_id": getattr(user, 'id', None), "event": "news_category_access", "category": category})
     """
     Get news articles by category.
     
@@ -132,8 +144,18 @@ async def get_news_by_category(
 @track_api_call("hackernews_top")
 @require_permission("read:news")
 async def get_hacker_news_top(
-    limit: int = Query(10, ge=1, le=50, description="Number of stories to return")
+    limit: int = Query(10, ge=1, le=50, description="Number of stories to return"),
+    user=Depends(require_auth),
+    user_role: str = Depends(get_current_user_role),
 ):
+    usage_key = f"news:{getattr(user, 'id', 'anon')}:{datetime.utcnow().date()}"
+    current_usage = cache.get(usage_key) or 0
+    if not check_rate_limit(user_role, int(current_usage)):
+        from fastapi import HTTPException
+        raise HTTPException(status_code=429, detail="Rate limit exceeded for your tier.")
+    cache.set(usage_key, int(current_usage) + 1, ttl=86400)
+    import logging
+    logging.getLogger("vuva.audit").info(f"User {getattr(user, 'id', None)} accessed Hacker News top stories", extra={"user_id": getattr(user, 'id', None), "event": "hackernews_access"})
     """
     Get top stories from Hacker News.
     
@@ -154,8 +176,18 @@ async def get_hacker_news_top(
 @require_permission("read:full_articles")
 async def extract_full_article(
     request: ArticleExtractionRequest,
-    db: AsyncSession = Depends(get_db)
+    db: AsyncSession = Depends(get_db),
+    user=Depends(require_auth),
+    user_role: str = Depends(get_current_user_role),
 ):
+    usage_key = f"news:{getattr(user, 'id', 'anon')}:{datetime.utcnow().date()}"
+    current_usage = cache.get(usage_key) or 0
+    if not check_rate_limit(user_role, int(current_usage)):
+        from fastapi import HTTPException
+        raise HTTPException(status_code=429, detail="Rate limit exceeded for your tier.")
+    cache.set(usage_key, int(current_usage) + 1, ttl=86400)
+    import logging
+    logging.getLogger("vuva.audit").info(f"User {getattr(user, 'id', None)} extracted full article", extra={"user_id": getattr(user, 'id', None), "event": "article_extract"})
     """
     Extract full article content from a URL.
     
@@ -187,8 +219,18 @@ async def extract_full_article(
 @require_permission("read:news")
 async def search_news(
     request: NewsSearchRequest,
-    db: AsyncSession = Depends(get_db)
+    db: AsyncSession = Depends(get_db),
+    user=Depends(require_auth),
+    user_role: str = Depends(get_current_user_role),
 ):
+    usage_key = f"news:{getattr(user, 'id', 'anon')}:{datetime.utcnow().date()}"
+    current_usage = cache.get(usage_key) or 0
+    if not check_rate_limit(user_role, int(current_usage)):
+        from fastapi import HTTPException
+        raise HTTPException(status_code=429, detail="Rate limit exceeded for your tier.")
+    cache.set(usage_key, int(current_usage) + 1, ttl=86400)
+    import logging
+    logging.getLogger("vuva.audit").info(f"User {getattr(user, 'id', None)} searched news", extra={"user_id": getattr(user, 'id', None), "event": "news_search"})
     """
     Search news articles by keyword.
     
@@ -208,8 +250,18 @@ async def search_news(
 @require_permission("read:news")
 async def get_all_news(
     limit_per_category: int = Query(5, ge=1, le=20, description="Articles per category"),
-    db: AsyncSession = Depends(get_db)
+    db: AsyncSession = Depends(get_db),
+    user=Depends(require_auth),
+    user_role: str = Depends(get_current_user_role),
 ):
+    usage_key = f"news:{getattr(user, 'id', 'anon')}:{datetime.utcnow().date()}"
+    current_usage = cache.get(usage_key) or 0
+    if not check_rate_limit(user_role, int(current_usage)):
+        from fastapi import HTTPException
+        raise HTTPException(status_code=429, detail="Rate limit exceeded for your tier.")
+    cache.set(usage_key, int(current_usage) + 1, ttl=86400)
+    import logging
+    logging.getLogger("vuva.audit").info(f"User {getattr(user, 'id', None)} accessed all news", extra={"user_id": getattr(user, 'id', None), "event": "news_all_access"})
     """
     Get news from all categories.
     

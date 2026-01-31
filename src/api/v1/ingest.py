@@ -11,6 +11,9 @@ from pydantic import BaseModel, Field
 from src.config import get_settings
 from src.services.storage_service import get_storage
 from src.database import get_db
+from src.middleware.auth import require_auth
+from src.middleware.authorization import require_permission, get_current_user_role, check_rate_limit
+from src.services.cache_service import cache
 from src.models import OCRJob
 from src.services import pubsub
 from src.worker.celery_app import celery_app
@@ -46,8 +49,16 @@ async def upload_newspaper(
     language: Optional[str] = Form(default="en", description="Language code (e.g., 'en', 'es', 'fr')"),
     source: Optional[str] = Form(default=None, description="Newspaper source name"),
     db: AsyncSession = Depends(get_db),
-    user_id: Optional[str] = None,  # TODO: Replace with actual user extraction from auth
+    user=Depends(require_auth),
+    user_role: str = Depends(get_current_user_role),
 ):
+    # Rate limiting
+    usage_key = f"ingest:{getattr(user, 'id', 'anon')}:{datetime.utcnow().date()}"
+    current_usage = cache.get(usage_key) or 0
+    if not check_rate_limit(user_role, int(current_usage)):
+        from fastapi import HTTPException
+        raise HTTPException(status_code=429, detail="Rate limit exceeded for your tier.")
+    cache.set(usage_key, int(current_usage) + 1, ttl=86400)
     """
     Upload a newspaper image for OCR processing and text extraction.
     
@@ -99,7 +110,7 @@ async def upload_newspaper(
             await image.seek(0)
         except Exception:
             pass
-        saved = await storage.save(image, user_id=user_id)
+        saved = await storage.save(image, user_id=getattr(user, 'id', None))
         if not saved or not saved.get("filename"):
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
@@ -141,6 +152,9 @@ async def upload_newspaper(
             )
         except Exception:
             pass
+        # Audit log: user uploaded newspaper
+        import logging
+        logging.getLogger("vuva.audit").info(f"User {getattr(user, 'id', None)} uploaded newspaper {saved.get('filename')}", extra={"user_id": getattr(user, 'id', None), "event": "upload_newspaper", "filename": saved.get('filename')})
         return IngestionResponse(
             status="accepted",
             data={
@@ -176,7 +190,7 @@ async def upload_newspaper(
 
 
 @router.get("/status/{ingestion_id}", response_model=IngestionStatusResponse)
-async def get_ingestion_status(ingestion_id: str):
+async def get_ingestion_status(ingestion_id: str, user=Depends(require_auth)):
     """
     Check the processing status of an uploaded newspaper.
     
@@ -218,9 +232,11 @@ async def websocket_notifications(ws: WebSocket):
 
 
 @router.get("/history")
+@require_permission("read:own_uploads")
 async def get_ingestion_history(
     page: int = 1,
     page_size: int = 20,
+    user=Depends(require_auth),
 ):
     """
     Get upload history for the authenticated user.
@@ -246,8 +262,10 @@ async def get_ingestion_history(
 
 
 @router.post("/batch")
+@require_permission("upload:newspapers")
 async def batch_upload(
     images: list[UploadFile] = File(..., description="Multiple newspaper images"),
+    user=Depends(require_auth),
 ):
     """
     Upload multiple newspaper images for batch processing.
