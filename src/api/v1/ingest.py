@@ -44,6 +44,7 @@ async def upload_newspaper(
     language: Optional[str] = Form(default="en", description="Language code (e.g., 'en', 'es', 'fr')"),
     source: Optional[str] = Form(default=None, description="Newspaper source name"),
     db: AsyncSession = Depends(get_db),
+    user_id: Optional[str] = None,  # TODO: Replace with actual user extraction from auth
 ):
     """
     Upload a newspaper image for OCR processing and text extraction.
@@ -99,7 +100,14 @@ async def upload_newspaper(
         await image.seek(0)
     except Exception:
         pass
-    saved = await storage.save(image)
+    saved = await storage.save(image, user_id=user_id)
+
+# Admin endpoint to trigger cleanup of old files
+@router.post("/cleanup-uploads")
+async def cleanup_uploads():
+    storage = get_storage()
+    storage.cleanup_old_files()
+    return {"status": "success", "message": "Old files cleaned up."}
 
     # Persist an OCR job record
     job = OCRJob(
