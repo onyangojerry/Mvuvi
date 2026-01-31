@@ -101,6 +101,14 @@ async def upload_newspaper(
     except Exception:
         pass
     saved = await storage.save(image, user_id=user_id)
+    if not saved or not saved.get("filename"):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail={
+                "code": "UPLOAD_FAILED",
+                "message": "Failed to save uploaded file.",
+            },
+        )
 
 # Admin endpoint to trigger cleanup of old files
 @router.post("/cleanup-uploads")

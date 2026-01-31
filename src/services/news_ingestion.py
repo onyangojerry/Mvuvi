@@ -14,7 +14,40 @@ from dateutil import parser as date_parser
 logger = logging.getLogger(__name__)
 
 
+
 class RSSFeedAggregator:
+    def fetch_all(self, limit_per_category: int = 5):
+        """
+        Legacy sync fetch for test compatibility. Returns a dict of articles per category.
+        """
+        result = {}
+        for category in self.feeds:
+            articles = self.fetch_category(category, limit=limit_per_category)
+            result[category] = articles
+        return result
+
+    def fetch_category(self, category: str, limit: int = 10):
+        """Legacy sync fetch for test compatibility."""
+        if category not in self.feeds:
+            return []
+        articles = []
+        for url in self.feeds[category]:
+            articles.extend(self._fetch_single_feed(url, category))
+        return articles[:limit]
+
+    # Legacy compatibility for tests expecting 'feed_sources' and '_fetch_single_feed'
+    @property
+    def feed_sources(self):
+        return self.feeds
+
+    def _fetch_single_feed(self, feed_url: str, category: str = None):
+        """Legacy sync fetch for test compatibility."""
+        articles = self._parse_feed(feed_url)
+        # Add category to each article for test assertions
+        for a in articles:
+            a["category"] = category or "general"
+        return articles
+
     """
     Aggregator for RSS feeds from various free news sources.
     

@@ -77,7 +77,8 @@ class AuthService:
         try:
             ph.verify(hashed_password, plain_password)
             return True
-        except (VerifyMismatchError, InvalidHashError):
+        except Exception:
+            # Catch all argon2 errors (including VerificationError, InvalidHashError, etc.)
             return False
     
     @staticmethod
@@ -215,8 +216,10 @@ class AuthService:
         
         # Timing-attack resistance: always verify hash even if user not found
         if user is None:
-            # Dummy hash to maintain consistent timing
-            AuthService.verify_password(password, "$argon2id$v=19$m=65536,t=3,p=4$dummy")
+            try:
+                AuthService.verify_password(password, "$argon2id$v=19$m=65536,t=3,p=4$dummy")
+            except Exception:
+                pass
             return None
         
         # Verify password

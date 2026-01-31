@@ -247,9 +247,11 @@ async def create_api_key(
     await db.refresh(api_key)
     
     # Return response with raw key (only time it's shown)
+    # Ensure 'name' is never None for response
+    if api_key.name is None:
+        api_key.name = key_data.name or "Unnamed Key"
     response = APIKeyResponse.from_orm(api_key)
     response.key = raw_key
-    
     return response
 
 

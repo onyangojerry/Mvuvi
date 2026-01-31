@@ -15,37 +15,53 @@ from src.config import Settings, get_settings
 from src.database import Base, get_db
 
 
-# Test database configuration
-TEST_DATABASE_URL = "sqlite+aiosqlite:///:memory:"
 
-# Create test engine with in-memory SQLite
-test_engine = create_async_engine(
-    TEST_DATABASE_URL,
-    connect_args={"check_same_thread": False},
-    poolclass=StaticPool,
-    echo=False,
-)
+# --- Parallel test DB isolation ---
+import random, string
+import contextvars
 
-# Create session factory
-TestSessionLocal = async_sessionmaker(
-    bind=test_engine,
-    class_=AsyncSession,
-    expire_on_commit=False,
-    autocommit=False,
-    autoflush=False,
-)
+_db_suffix = contextvars.ContextVar("db_suffix", default=None)
 
+def _random_suffix():
+    return ''.join(random.choices(string.ascii_lowercase + string.digits, k=8))
+
+def get_test_db_url():
+    suffix = _db_suffix.get()
+    if not suffix:
+        suffix = _random_suffix()
+        _db_suffix.set(suffix)
+    return f"sqlite+aiosqlite:///file:memdb_{suffix}?mode=memory&cache=shared"
 
 def get_test_settings():
-    """Get test settings override."""
+    """Get test settings override with unique DB per test."""
     return Settings(
         environment="testing",
         debug=True,
-        database_url=TEST_DATABASE_URL,
+        database_url=get_test_db_url(),
         redis_url="redis://localhost:6379/1",
         cache_enabled=True,
         secret_key="test-secret-key-for-jwt-tokens-in-testing-environment-only",
     )
+
+def create_test_engine():
+    return create_async_engine(
+        get_test_db_url(),
+        connect_args={"check_same_thread": False},
+        poolclass=StaticPool,
+        echo=False,
+    )
+
+def create_test_session_local(engine):
+    return async_sessionmaker(
+        bind=engine,
+        class_=AsyncSession,
+        expire_on_commit=False,
+        autocommit=False,
+        autoflush=False,
+    )
+
+test_engine = create_test_engine()
+TestSessionLocal = create_test_session_local(test_engine)
 
 
 async def override_get_db():
@@ -69,14 +85,19 @@ def anyio_backend():
 
 @pytest_asyncio.fixture(scope="function", autouse=True)
 async def setup_test_db():
-    """Set up and tear down test database for each test."""
+    """Set up and tear down test database for each test (parallel safe)."""
+    # Assign a new DB suffix for this test context
+    import random, string
+    suffix = ''.join(random.choices(string.ascii_lowercase + string.digits, k=8))
+    _db_suffix.set(suffix)
+    global test_engine, TestSessionLocal
+    test_engine = create_test_engine()
+    TestSessionLocal = create_test_session_local(test_engine)
     # Create all tables
     async with test_engine.begin() as conn:
         await conn.run_sync(Base.metadata.drop_all)
         await conn.run_sync(Base.metadata.create_all)
-    
     yield
-    
     # Drop all tables after test
     async with test_engine.begin() as conn:
         await conn.run_sync(Base.metadata.drop_all)

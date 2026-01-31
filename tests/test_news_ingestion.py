@@ -351,27 +351,25 @@ class TestNewsDataManager:
 class TestNewsIngestionIntegration:
     """Integration tests for the news ingestion pipeline."""
     
-    def test_end_to_end_news_fetch(self):
+    @pytest.mark.asyncio
+    async def test_end_to_end_news_fetch(self):
         """Test the complete news fetching pipeline."""
         manager = NewsDataManager()
-        
         # This will make real API calls - use with caution
         # Uncomment only for integration testing
-        # news = manager.get_news_by_category("technology", limit=1)
+        # news = await manager.get_news_by_category("technology", limit=1)
         # assert len(news) > 0
         pass
-    
-    def test_multiple_categories(self):
+
+    @pytest.mark.asyncio
+    async def test_multiple_categories(self):
         """Test fetching from multiple categories."""
         manager = NewsDataManager()
-        
         categories = ["technology", "world"]
         results = {}
-        
         for category in categories:
             # Mock this for unit tests
             results[category] = []
-        
         assert len(results) == 2
 
 

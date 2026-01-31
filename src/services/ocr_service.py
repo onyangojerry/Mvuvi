@@ -29,9 +29,12 @@ try:
     from PIL import Image
     import cv2
     import numpy as np
+    # Try to get tesseract version to confirm it's on PATH
+    _ver = pytesseract.get_tesseract_version()
     TESSERACT_AVAILABLE = True
-except ImportError:
-    pass
+    print(f"[OCR INIT] Tesseract available, version: {_ver}")
+except Exception as e:
+    print(f"[OCR INIT] Tesseract not available: {e}")
 
 
 class ImagePreprocessor:
@@ -209,23 +212,10 @@ class OCRService:
         self._initialize_engines()
     
     def _initialize_engines(self):
-        """Initialize available OCR engines."""
+        """Initialize only Tesseract OCR engine."""
         if TESSERACT_AVAILABLE:
             self._engines['tesseract'] = TesseractOCR
-        
-        # Check for easyocr
-        try:
-            import easyocr
-            self._engines['easyocr'] = EasyOCREngine
-        except ImportError:
-            pass
-        
-        # Check for paddleocr
-        try:
-            from paddleocr import PaddleOCR
-            self._engines['paddleocr'] = PaddleOCREngine
-        except ImportError:
-            pass
+        print(f"[OCR INIT] Available engines: {list(self._engines.keys())}")
     
     def available_engines(self) -> List[str]:
         """Get list of available OCR engines."""

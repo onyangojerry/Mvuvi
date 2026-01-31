@@ -102,33 +102,67 @@ async def extract_text_from_image(
 ):
     """
     Extract text from an uploaded image using OCR.
-    
+
     This endpoint processes images and extracts text using lightweight,
     open-source OCR engines:
-    
+
     **Supported Engines**:
     - `auto`: Automatically select best available engine
     - `tesseract`: Use Tesseract OCR (most compatible)
     - `easyocr`: Use EasyOCR (highest accuracy)
     - `paddleocr`: Use PaddleOCR (fastest)
-    
+
     **Image Preprocessing** (enabled by default):
     - Grayscale conversion
     - Noise reduction
     - Adaptive thresholding
     - Deskewing
-    
+
     **Supported Languages**: en, es, fr, de, zh, ja, and many more
     (depends on installed OCR engine)
-    
+
     **Example**:
     ```bash
-    curl -X POST "http://localhost:8000/api/v1/ocr/extract" \\
-      -F "image=@newspaper.jpg" \\
-      -F "engine=tesseract" \\
-      -F "language=en"
+    curl -X POST "http://localhost:8000/api/v1/ocr/extract" \
+        -F "image=@newspaper.jpg" \
+        -F "engine=tesseract" \
+        -F "language=en"
     ```
     """
+    # Additional security: file size limit (10MB)
+    contents = await image.read()
+    max_size_bytes = 10 * 1024 * 1024
+    if len(contents) > max_size_bytes:
+        raise HTTPException(
+            status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
+            detail={
+                "code": "IMAGE_TOO_LARGE",
+                "message": f"File size exceeds limit of 10MB",
+                "file_size_bytes": len(contents),
+                "max_size_bytes": max_size_bytes,
+            },
+        )
+    # Path traversal protection
+    if ".." in image.filename or image.filename.startswith("/"):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail={
+                "code": "INVALID_FILENAME",
+                "message": "Invalid filename: path traversal detected.",
+            },
+        )
+    # SQL injection-like pattern in language param
+    if "'" in language or '"' in language or ";" in language or "--" in language:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail={
+                "code": "INVALID_LANGUAGE_PARAM",
+                "message": "Invalid characters in language parameter.",
+            },
+        )
+    # Reset file pointer for saving
+    import io
+    image.file = io.BytesIO(contents)
     # Validate file type
     allowed_types = ["image/jpeg", "image/png", "image/jpg", "application/pdf"]
     if image.content_type not in allowed_types:
@@ -140,20 +174,19 @@ async def extract_text_from_image(
                 "supported_formats": allowed_types,
             },
         )
-    
+
     # Save uploaded file to temp location
     file_extension = os.path.splitext(image.filename)[1] or ".jpg"
     temp_path = tempfile.mktemp(suffix=file_extension)
-    
+
     try:
         # Save file
-        contents = await image.read()
         with open(temp_path, "wb") as f:
             f.write(contents)
-        
+
         # Get OCR service
         ocr_service = get_ocr_service()
-        
+
         # Check if any engine is available
         if not ocr_service.available_engines():
             raise HTTPException(
@@ -164,7 +197,7 @@ async def extract_text_from_image(
                     "hint": "Install at least one: pip install pytesseract easyocr paddleocr",
                 },
             )
-        
+
         # Extract text
         result = await ocr_service.extract_text(
             image_path=temp_path,
@@ -172,7 +205,7 @@ async def extract_text_from_image(
             language=language,
             preprocess=preprocess,
         )
-        
+
         return OCRResponse(
             status="success",
             data=OCRResult(**result),
@@ -182,7 +215,7 @@ async def extract_text_from_image(
                 "preprocessing_enabled": preprocess,
             },
         )
-    
+
     except ValueError as e:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -191,17 +224,21 @@ async def extract_text_from_image(
                 "message": str(e),
             },
         )
-    
+
     except Exception as e:
+        import traceback
+        tb = traceback.format_exc()
+        print(f"[OCR ERROR] {e}\nTraceback:\n{tb}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail={
                 "code": "OCR_PROCESSING_FAILED",
                 "message": "Failed to process image",
                 "error": str(e),
+                "traceback": tb,
             },
         )
-    
+
     finally:
         # Clean up temp file
         if os.path.exists(temp_path):

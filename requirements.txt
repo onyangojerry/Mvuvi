@@ -23,14 +23,12 @@ passlib[bcrypt]==1.7.4
 argon2-cffi==23.1.0
 python-multipart==0.0.6
 
-# OCR and Image Processing
+
+# OCR and Image Processing (Tesseract only)
 pytesseract==0.3.10
 Pillow==10.2.0
 pdf2image==1.17.0
 opencv-python-headless==4.9.0.80
-easyocr==1.7.1
-paddleocr==2.7.3
-paddlepaddle==2.6.2
 
 # ML/AI Libraries (lightweight)
 numpy==1.26.3
