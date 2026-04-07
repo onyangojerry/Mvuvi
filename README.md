@@ -4,8 +4,6 @@ Mvuvi is a distributed system that converts scanned documents into structured, s
 
 It is designed to handle noisy, multilingual inputs at scale using asynchronous processing and multi-engine OCR.
 
----
-
 ##  Features
 
 - Asynchronous OCR pipeline (FastAPI + Celery + Redis)
@@ -23,6 +21,8 @@ It is designed to handle noisy, multilingual inputs at scale using asynchronous 
 
 ::contentReference[oaicite:0]{index=0}
 
+---
+<img width="644" height="679" alt="mvuvi" src="https://github.com/user-attachments/assets/c0bdad28-63f7-44ec-925b-57a8fbd1f3e4" />
 
 ### System Flow
 
